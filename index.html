@@ -370,7 +370,17 @@ function startGame() {
     rmExit.add(new THREE.Mesh(new THREE.CircleGeometry(3,64), new THREE.MeshBasicMaterial({color:0x00cc66,transparent:true,opacity:0.55,side:THREE.DoubleSide})));
     const rmExitLight = new THREE.PointLight(0x00ff88,3,30);
     rmExit.add(rmExitLight);
+    // Exit portal steht bei (0,3.5,0) lokal = weit weg vom Spawn (20,4,20)
     rmExit.position.set(0, 3.5, 0);
+    // Groesseres Glow-Objekt damit man es leichter findet
+    const rmExitGlow = new THREE.Mesh(
+        new THREE.CircleGeometry(5.5, 32),
+        new THREE.MeshBasicMaterial({ color: 0x00ff44, transparent: true, opacity: 0.1, side: THREE.DoubleSide })
+    );
+    rmExit.add(rmExitGlow);
+    // Extra starkes Licht damit das Portal von weitem sichtbar ist
+    const rmExitBeacon = new THREE.PointLight(0x00ff88, 6, 60);
+    rmExit.add(rmExitBeacon);
     rmGroup.add(rmExit);
 
     // ── Input ────────────────────────────────────────────────────────
@@ -487,19 +497,20 @@ function startGame() {
         // Portal check
         if (portalCD > 0) portalCD -= dt;
         if (!inRM && portalCD <= 0 && pPos.distanceTo(portalG.position) < 3.8) {
-            inRM = true; portalCD = 3;
-            pPos.set(RM.x + 2, RM.y + 4, RM.z + 2); pVel.set(0, 0, 0);
+            inRM = true; portalCD = 5;
+            // Spawn weit weg vom Ausgangsportal (das bei RM.x/z ist)
+            pPos.set(RM.x + 20, RM.y + 4, RM.z + 20); pVel.set(0, 0, 0);
             rmGroup.visible = true;
             scene.background = new THREE.Color(0x1a0033);
             scene.fog = new THREE.Fog(0x1a0033, 50, 140);
             document.getElementById('dimension').style.display = 'block';
-            showMsg('Willkommen in der Rick & Morty Dimension! Finde Rick & Morty!', 6000);
+            showMsg('Willkommen in der Rick & Morty Dimension! Finde Rick & Morty! Geh zurueck zum gruenen Portal!', 7000);
         }
         if (inRM && portalCD <= 0) {
             const ep = new THREE.Vector3(RM.x, RM.y + 3.5, RM.z);
             if (pPos.distanceTo(ep) < 3.8) {
-                inRM = false; portalCD = 3;
-                pPos.set(-12, getH(-12,18) + 4, 21); pVel.set(0,0,0);
+                inRM = false; portalCD = 5;
+                pPos.set(-12, getH(-12,18) + 4, 25); pVel.set(0,0,0);
                 scene.background = new THREE.Color(0x0a0520);
                 scene.fog = new THREE.Fog(0x0a0520, 60, 200);
                 document.getElementById('dimension').style.display = 'none';
