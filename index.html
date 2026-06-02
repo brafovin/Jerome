@@ -608,12 +608,43 @@ function startGame() {
     const lChain = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 5), new THREE.MeshLambertMaterial({ color: 0x888800 }));
     lChain.position.y = -0.09; lG.add(lChain);
 
-    lG.position.set(0.58, 0.78, 0.08);
+    lG.position.set(-0.58, 0.78, 0.08);
     player.add(lG);
 
     const lanternLight = new THREE.PointLight(0xffaa33, 1.0, 8);
-    lanternLight.position.set(0.58, 0.52, 0.08);
+    lanternLight.position.set(-0.58, 0.52, 0.08);
     player.add(lanternLight);
+
+    // ── Maschinenpistole (rechte Hand) ───────────────────────────────
+    const GUN_M  = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+    const GUN_M2 = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const gunG = new THREE.Group();
+    // Gehäuse
+    const gBody = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.28), GUN_M);
+    gunG.add(gBody);
+    // Lauf
+    const gBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.22), GUN_M2);
+    gBarrel.position.set(0, 0.02, -0.25); gunG.add(gBarrel);
+    // Magazin
+    const gMag = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.20, 0.055), GUN_M);
+    gMag.position.set(0, -0.13, 0.04); gunG.add(gMag);
+    // Kolben
+    const gStock = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.055, 0.12), GUN_M2);
+    gStock.position.set(0, 0, 0.20); gunG.add(gStock);
+    // Griff
+    const gGrip = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.12, 0.05), GUN_M);
+    gGrip.position.set(0, -0.09, 0.10); gunG.add(gGrip);
+    // Visier
+    const gSight = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, 0.02), GUN_M2);
+    gSight.position.set(0, 0.055, -0.08); gunG.add(gSight);
+    // Mündungsfeuerdämpfer
+    const gMuz = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.06, 6), GUN_M2);
+    gMuz.rotation.x = Math.PI / 2;
+    gMuz.position.set(0, 0.02, -0.39); gunG.add(gMuz);
+
+    gunG.position.set(0.52, 0.46, -0.12);
+    gunG.rotation.set(0, 0, 0);
+    player.add(gunG);
 
     player.position.set(2, 5, 2);
     scene.add(player);
@@ -1274,7 +1305,7 @@ function startGame() {
         }
 
         const moving = mv.lengthSq() > 0;
-        if (moving) { mv.normalize(); pVel.x += (mv.x * 6 - pVel.x) * 0.25; pVel.z += (mv.z * 6 - pVel.z) * 0.25; walkPhase += dt * 9; }
+        if (moving) { mv.normalize(); pVel.x += (mv.x * 12 - pVel.x) * 0.28; pVel.z += (mv.z * 12 - pVel.z) * 0.28; walkPhase += dt * 14; }
         else if (!inUFO) { pVel.x *= 0.78; pVel.z *= 0.78; }
 
         if (keys['Space'] && onGround && !inUFO) { pVel.y = 9; onGround = false; }
@@ -1310,7 +1341,7 @@ function startGame() {
 
             player.position.copy(pPos);
             player.position.y -= 1.35;
-            player.rotation.y = yaw;
+            player.rotation.y = yaw + Math.PI;
         }
 
         // UFO Nähe-Hinweis
