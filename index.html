@@ -1298,11 +1298,11 @@ function startGame() {
             } else {
                 gY = getH(pPos.x, pPos.z);
             }
-            if (pPos.y < gY + 1.05) { pPos.y = gY + 1.05; pVel.y = 0; onGround = true; }
+            if (pPos.y < gY + 1.25) { pPos.y = gY + 1.25; pVel.y = 0; onGround = true; }
             else onGround = false;
 
             player.position.copy(pPos);
-            player.position.y -= 1.05;
+            player.position.y -= 1.25;
             player.rotation.y = yaw;
         }
 
@@ -1317,7 +1317,7 @@ function startGame() {
         legL.rotation.x =  sw; legR.rotation.x = -sw;
         armL.rotation.x = -sw * 0.5; armR.rotation.x =  sw * 0.5;
         // leichtes Körper-Wippen beim Gehen
-        player.position.y = (player.position.y - (player.position.y - (pPos.y - 1.05))) * 0.8 + (moving ? Math.abs(Math.sin(walkPhase * 2)) * 0.04 : 0);
+        player.position.y += (moving ? Math.abs(Math.sin(walkPhase * 2)) * 0.04 : 0);
 
         // Lantern flicker
         lanternLight.intensity = 2.2 + Math.sin(time * 11) * 0.3 + Math.sin(time * 7.3) * 0.2;
