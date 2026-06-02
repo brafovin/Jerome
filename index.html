@@ -44,11 +44,11 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 <div id="loading">Laden...</div>
 <div id="ui" style="display:none">
     <div id="title">&#x1F6F8; UFO FLY</div>
-    W A S D &#8212; Bewegen / UFO fliegen<br>
-    Maus &#8212; Kamera drehen<br>
+    W A S D &#8212; Laufen / UFO steuern<br>
     Leertaste &#8212; Springen / UFO hoch<br>
     Shift &#8212; UFO runter<br>
-    <b>E</b> &#8212; UFO einsteigen / aussteigen<br><br>
+    Maus &#8212; Kamera<br>
+    <b style="color:#00ffff">E</b> &#8212; UFO einsteigen/aussteigen<br><br>
     Finde das gruene Portal!
 </div>
 <div id="crosshair" style="display:none">+</div>
@@ -257,7 +257,9 @@ function startGame() {
 
     const ufoLight = new THREE.PointLight(0x00ff88, 3, 28);
     ufoLight.position.y = -1; ufo.add(ufoLight);
-    ufo.position.set(30, 28, 30);
+    // UFO startet auf dem Boden
+    const ufoStartX = 10, ufoStartZ = 10;
+    ufo.position.set(ufoStartX, getH(ufoStartX, ufoStartZ) + 1.5, ufoStartZ);
     scene.add(ufo);
 
     // ── Portal ───────────────────────────────────────────────────────
@@ -428,8 +430,9 @@ function startGame() {
         time += dt;
 
         // UFO
+        ufo.rotation.y += dt * 1.3; // immer rotieren (sieht cool aus)
         if (inUFO) {
-            // Spieler steuert das UFO
+            // Spieler steuert das UFO mit WASD + Leertaste + Shift
             const ufFwd = new THREE.Vector3(-Math.sin(ufoYaw), 0, -Math.cos(ufoYaw));
             const ufRgt = new THREE.Vector3( Math.cos(ufoYaw), 0, -Math.sin(ufoYaw));
             const ufMv  = new THREE.Vector3();
@@ -438,22 +441,16 @@ function startGame() {
             if (keys['KeyA'] || keys['ArrowLeft'])  ufMv.sub(ufRgt);
             if (keys['KeyD'] || keys['ArrowRight']) ufMv.add(ufRgt);
             if (ufMv.lengthSq() > 0) { ufMv.normalize(); ufo.position.addScaledVector(ufMv, 18 * dt); }
-            if (keys['Space'])      ufo.position.y += 12 * dt;
-            if (keys['ShiftLeft'] || keys['ShiftRight']) ufo.position.y -= 12 * dt;
-            ufo.position.y = Math.max(3, ufo.position.y);
-            ufoYaw -= (keys['KeyA']||keys['ArrowLeft'] ? -1 : keys['KeyD']||keys['ArrowRight'] ? 1 : 0) * dt * 0.8;
-            ufo.rotation.y += dt * 1.3;
-            // Spieler bleibt unsichtbar im UFO, Position folgt UFO
+            if (keys['Space'])                               ufo.position.y += 14 * dt;
+            if (keys['ShiftLeft'] || keys['ShiftRight'])     ufo.position.y -= 14 * dt;
+            // Nicht unter Boden sinken
+            const minY = getH(ufo.position.x, ufo.position.z) + 1.5;
+            if (ufo.position.y < minY) ufo.position.y = minY;
+            // Spieler folgt UFO
             pPos.set(ufo.position.x, ufo.position.y - 3, ufo.position.z);
-        } else {
-            // UFO fliegt autonom wenn Spieler nicht drin
-            ufoT += dt * 0.38;
-            ufo.position.x = Math.sin(ufoT) * 55 + Math.cos(ufoT * 0.5) * 18;
-            ufo.position.z = Math.cos(ufoT * 0.8) * 55 + Math.sin(ufoT * 1.2) * 14;
-            ufo.position.y = 22 + Math.sin(ufoT * 1.5) * 6;
-            ufo.rotation.y += dt * 1.3;
         }
-        beamMesh.material.opacity = 0.06 + Math.abs(Math.sin(time * 4)) * 0.08;
+        // Wenn nicht im UFO: UFO bleibt wo es ist (steht auf dem Boden)
+        beamMesh.material.opacity = inUFO ? (0.06 + Math.abs(Math.sin(time * 4)) * 0.08) : 0;
 
         // Portals spin
         portalRing.rotation.z += dt * 1.5;
@@ -482,13 +479,17 @@ function startGame() {
                 player.visible = false;
                 pVel.set(0,0,0);
                 ufoYaw = yaw;
-                showMsg('UFO Modus! WASD=Fliegen  Leertaste=Hoch  Shift=Runter  E=Aussteigen', 5000);
+                beamMesh.material.opacity = 0.1;
+                showMsg('UFO! WASD=Fliegen  Leertaste=Hoch  Shift=Runter  E=Aussteigen', 5000);
             } else if (inUFO) {
                 inUFO = false;
                 player.visible = true;
-                pPos.set(ufo.position.x, ufo.position.y - 2, ufo.position.z);
-                pVel.set(0, -2, 0);
-                showMsg('Ausgestiegen! Drucke E um wieder einzusteigen.', 3000);
+                // UFO landet auf dem Boden
+                ufo.position.y = getH(ufo.position.x, ufo.position.z) + 1.5;
+                // Spieler landet neben dem UFO
+                pPos.set(ufo.position.x + 5, getH(ufo.position.x + 5, ufo.position.z) + 1.5, ufo.position.z);
+                pVel.set(0, 0, 0);
+                showMsg('Ausgestiegen! Geh nah ans UFO und drucke E zum Einsteigen.', 3000);
             }
         }
         keys['_ePrev'] = keys['KeyE'];
