@@ -1296,7 +1296,14 @@ function startGame() {
                 const lx = pPos.x - RM.x, lz = pPos.z - RM.z;
                 gY = RM.y + Math.sin(lx * 0.1) * 2 + Math.cos(lz * 0.08) * 1.5 + 0.8;
             } else {
-                gY = getH(pPos.x, pPos.z);
+                const r = 0.3;
+                gY = Math.max(
+                    getH(pPos.x, pPos.z),
+                    getH(pPos.x + r, pPos.z),
+                    getH(pPos.x - r, pPos.z),
+                    getH(pPos.x, pPos.z + r),
+                    getH(pPos.x, pPos.z - r)
+                );
             }
             if (pPos.y < gY + 1.25) { pPos.y = gY + 1.25; pVel.y = 0; onGround = true; }
             else onGround = false;
