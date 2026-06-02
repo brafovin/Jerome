@@ -844,6 +844,84 @@ function startGame() {
     gunG.rotation.set(0, 0, 0);
     player.add(gunG);
 
+    // Mündungsfeuer-Licht
+    const muzzleLight = new THREE.PointLight(0xffcc44, 0, 5);
+    scene.add(muzzleLight);
+
+    // Schuss-System
+    const raycaster = new THREE.Raycaster();
+    const bullets = [];
+    let shootCooldown = 0;
+    let mouseHeld = false;
+
+    function spawnBlood(pos) {
+        for (let p = 0; p < 10; p++) {
+            const part = new THREE.Mesh(
+                new THREE.SphereGeometry(0.07 + Math.random()*0.10, 4, 4),
+                new THREE.MeshBasicMaterial({ color: 0xaa0000 })
+            );
+            part.position.set(pos.x+(Math.random()-.5)*1.2, pos.y+Math.random()*0.6, pos.z+(Math.random()-.5)*1.2);
+            scene.add(part);
+            setTimeout(() => scene.remove(part), 2500);
+        }
+    }
+
+    function shoot() {
+        if (inUFO || !locked || shootCooldown > 0) return;
+        shootCooldown = 0.09; // ~11 Schuss/Sekunde
+
+        // Mündungsfeuer
+        muzzleLight.intensity = 4;
+        // Weltposition der Mündung berechnen
+        const mwp = new THREE.Vector3();
+        gMuz.getWorldPosition(mwp);
+        muzzleLight.position.copy(mwp);
+
+        // Strahl aus Kamera-Mitte
+        raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+        const ray = raycaster.ray;
+
+        // Trefferpunkt bestimmen
+        const liveZombies = zombies.filter(z => z.userData.alive);
+        const hits = raycaster.intersectObjects(liveZombies, true);
+        const maxDist = 120;
+        const endPt = hits.length > 0 && hits[0].distance < maxDist
+            ? hits[0].point.clone()
+            : ray.origin.clone().addScaledVector(ray.direction, maxDist);
+
+        // Zombie treffen
+        if (hits.length > 0 && hits[0].distance < maxDist) {
+            let obj = hits[0].object;
+            while (obj.parent && !zombies.includes(obj)) obj = obj.parent;
+            if (zombies.includes(obj) && obj.userData.alive) {
+                obj.userData.hp = (obj.userData.hp || 3) - 1;
+                if (obj.userData.hp <= 0) {
+                    obj.userData.alive = false;
+                    spawnBlood(hits[0].point);
+                    scene.remove(obj);
+                    zombiesKilled++;
+                    killUI.textContent = 'Zombies getoetet: ' + zombiesKilled;
+                    checkUFOUpgrade();
+                    setTimeout(() => {
+                        const rx = pPos.x + (Math.random()-.5)*160;
+                        const rz = pPos.z + (Math.random()-.5)*160;
+                        makeZombie(rx, rz);
+                    }, 5000);
+                }
+            }
+        }
+
+        // Geschoss-Tracer (leuchtende Linie)
+        const tracerGeo = new THREE.BufferGeometry().setFromPoints([mwp.clone(), endPt]);
+        const tracer = new THREE.Line(tracerGeo,
+            new THREE.LineBasicMaterial({ color: 0xffee66, transparent: true, opacity: 0.9 }));
+        scene.add(tracer);
+        bullets.push({ mesh: tracer, life: 0.07 });
+    }
+
+    document.addEventListener('mousedown', e => { if (e.button === 0) mouseHeld = true; });
+    document.addEventListener('mouseup',   e => { if (e.button === 0) mouseHeld = false; });
+
     player.position.set(2, 5, 2);
     scene.add(player);
 
@@ -1076,7 +1154,8 @@ function startGame() {
             wanderTimer: 2 + Math.random() * 4,
             legL, legR, armL: armL2, armR: armR2,
             alive: true,
-            beamPull: 0,   // wie stark der Strahl zieht
+            hp: 3,
+            beamPull: 0,
             startY: h,
             eyeLight
         };
@@ -1331,6 +1410,16 @@ function startGame() {
         const dt = Math.min(clock.getDelta(), 0.05);
         time += dt;
 
+        // ── Schuss-Update ───────────────────────────────────────────
+        shootCooldown -= dt;
+        muzzleLight.intensity *= 0.65; // Mündungsfeuer abklingen lassen
+        if (mouseHeld) shoot();
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            bullets[i].life -= dt;
+            bullets[i].mesh.material.opacity = Math.max(0, bullets[i].life / 0.07);
+            if (bullets[i].life <= 0) { scene.remove(bullets[i].mesh); bullets.splice(i, 1); }
+        }
+
         // ── Zombies update ──────────────────────────────────────────
         zombies.forEach(z => {
             if (!z.userData.alive) return;
@@ -1388,6 +1477,7 @@ function startGame() {
                         z.position.set(rx, rh, rz);
                         z.rotation.set(0, Math.random()*Math.PI*2, 0);
                         z.userData.alive = true;
+                        z.userData.hp = 3;
                         z.userData.beamPull = 0;
                         z.userData.walkDir.set(Math.random()-0.5, 0, Math.random()-0.5).normalize();
                         scene.add(z);
