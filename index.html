@@ -164,7 +164,8 @@ function startGame() {
         const woodM  = new THREE.MeshLambertMaterial({ color: 0x5a3010 });
 
         // Boden
-        g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10,0.15,10), floorM), {position: new THREE.Vector3(0,0,0)}));
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(10,0.15,10), floorM);
+        g.add(floor);
         // Decke
         const ceil = new THREE.Mesh(new THREE.BoxGeometry(10,0.15,10), wallM);
         ceil.position.y = 3.5; g.add(ceil);
@@ -184,7 +185,8 @@ function startGame() {
 
         // Tisch
         const tbl = new THREE.Group();
-        tbl.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2.5,0.12,1.4), woodM), {position: new THREE.Vector3(0,0.9,0)}));
+        const tblTop = new THREE.Mesh(new THREE.BoxGeometry(2.5,0.12,1.4), woodM);
+        tblTop.position.set(0,0.9,0); tbl.add(tblTop);
         [[0.9,0,-0.5],[0.9,0,0.5],[-0.9,0,-0.5],[-0.9,0,0.5]].forEach(([lx,ly,lz]) => {
             const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.9,0.1), woodM);
             leg.position.set(lx, 0.45+ly, lz); tbl.add(leg);
@@ -194,7 +196,8 @@ function startGame() {
         // Stuehle
         [[-1.6,0,-2],[1.6,0,-2],[0,0,-3.4]].forEach(([cx,cy,cz], i) => {
             const ch = new THREE.Group();
-            ch.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.7,0.08,0.7), woodM), {position: new THREE.Vector3(0,0.55,0)}));
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.08,0.7), woodM);
+            seat.position.set(0,0.55,0); ch.add(seat);
             [[0.25,0.3,-0.25],[0.25,0.3,0.25],[-0.25,0.3,-0.25],[-0.25,0.3,0.25]].forEach(([lx,ly,lz]) => {
                 const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.55,0.07), woodM);
                 leg2.position.set(lx, ly, lz); ch.add(leg2);
@@ -208,7 +211,8 @@ function startGame() {
 
         // Bett
         const bed = new THREE.Group();
-        bed.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2,0.5,3.5), woodM), {position: new THREE.Vector3(0,0.25,0)}));
+        const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(2,0.5,3.5), woodM);
+        bedFrame.position.set(0,0.25,0); bed.add(bedFrame);
         const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.8,0.3,3.2), new THREE.MeshLambertMaterial({color:0xffffff}));
         mattress.position.y = 0.65; bed.add(mattress);
         const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.15,0.6), new THREE.MeshLambertMaterial({color:0xddddff}));
@@ -232,8 +236,8 @@ function startGame() {
 
         // Kamin
         const fireplace = new THREE.Group();
-        fireplace.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2,2.5,0.5),
-            new THREE.MeshLambertMaterial({color:0x777777})), {position: new THREE.Vector3(0,1.25,0)}));
+        const fpWall = new THREE.Mesh(new THREE.BoxGeometry(2,2.5,0.5), new THREE.MeshLambertMaterial({color:0x777777}));
+        fpWall.position.set(0,1.25,0); fireplace.add(fpWall);
         const fire = new THREE.Mesh(new THREE.SphereGeometry(0.3,8,8),
             new THREE.MeshBasicMaterial({color:0xff6600}));
         fire.position.set(0, 0.5, 0.1); fireplace.add(fire);
