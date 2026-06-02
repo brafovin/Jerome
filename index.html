@@ -24,63 +24,93 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 }
 #startscreen {
     position: fixed; inset: 0; z-index: 50;
-    background: radial-gradient(ellipse at center, #0a1a2e 0%, #000 100%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 0;
+    display: flex; flex-direction: row; align-items: stretch;
+    background: #000;
 }
-#startscreen .stars {
-    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+/* Linke Seite – Bild/Hintergrund */
+#startscreen .bg-left {
+    flex: 1; position: relative; overflow: hidden;
+    background: radial-gradient(ellipse at 40% 60%, #0a2a1a 0%, #000 70%);
+    display: flex; align-items: center; justify-content: center;
 }
-#startscreen .logo {
-    font-size: 68px; font-weight: 900; letter-spacing: 8px;
-    color: #fff; text-shadow: 0 0 40px #00ff88, 0 0 80px #00aa55;
-    margin-bottom: 8px; position: relative;
+#startscreen .bg-left .stars { position: absolute; inset: 0; pointer-events: none; }
+#startscreen .bg-left .main-logo {
+    position: relative; text-align: center;
 }
-#startscreen .subtitle {
-    color: #00ff88; font-size: 15px; letter-spacing: 4px;
-    text-shadow: 0 0 10px #00ff88; margin-bottom: 60px; position: relative;
+#startscreen .bg-left .ufo-big { font-size: 110px; animation: ufo-hover 3s ease-in-out infinite; display: block; }
+@keyframes ufo-hover { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+#startscreen .bg-left .game-title {
+    font-size: 72px; font-weight: 900; letter-spacing: 10px; color: #fff;
+    text-shadow: 0 0 50px #00ff88, 0 0 100px #00aa44;
+    line-height: 1;
 }
-#startscreen .ufo-icon { font-size: 80px; margin-bottom: 10px; animation: ufo-hover 2.5s ease-in-out infinite; position: relative; }
-@keyframes ufo-hover { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+#startscreen .bg-left .game-sub {
+    font-size: 13px; letter-spacing: 5px; color: #00ff88;
+    text-shadow: 0 0 10px #00ff88; margin-top: 10px;
+}
+/* Rechte Seite – Buttons */
+#startscreen .panel-right {
+    width: 320px; background: rgba(0,0,0,0.85);
+    border-left: 1px solid #00ff8833;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    padding: 40px 30px;
+}
+#startscreen .panel-right .panel-title {
+    font-size: 13px; letter-spacing: 5px; color: #00ff8888;
+    margin-bottom: 20px; text-transform: uppercase;
+}
 .menu-btn {
-    width: 260px; padding: 16px 0; margin: 10px 0;
-    font-size: 20px; font-weight: bold; letter-spacing: 3px;
-    border-radius: 10px; border: 2px solid #00ff88;
-    background: rgba(0,255,136,0.08); color: #00ff88;
+    width: 100%; padding: 18px 0; font-size: 18px; font-weight: bold;
+    letter-spacing: 3px; border-radius: 10px; border: 2px solid #00ff8866;
+    background: rgba(0,255,136,0.06); color: #ddd;
     cursor: pointer; text-transform: uppercase; position: relative;
-    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
-    text-shadow: 0 0 8px #00ff88;
+    transition: all 0.2s; text-align: center;
 }
-.menu-btn:hover { background: rgba(0,255,136,0.22); box-shadow: 0 0 24px #00ff88; transform: scale(1.05); }
+.menu-btn .btn-num {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; color: #00ff8888; font-weight: normal; letter-spacing: 1px;
+}
+.menu-btn:hover { background: rgba(0,255,136,0.18); border-color: #00ff88; color: #00ff88; box-shadow: 0 0 20px #00ff8844; transform: translateX(4px); }
 .menu-btn:active { transform: scale(0.97); }
-#settingsPanel {
-    position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.92);
+.menu-btn.primary { border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,0.12); font-size: 20px; }
+.menu-btn.primary:hover { background: rgba(0,255,136,0.28); box-shadow: 0 0 30px #00ff88; }
+/* Overlays */
+.overlay-panel {
+    position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.95);
     display: none; flex-direction: column; align-items: center; justify-content: center;
 }
-#settingsPanel h2 { color: #00ff88; font-size: 32px; letter-spacing: 4px; margin-bottom: 32px; text-shadow: 0 0 15px #00ff88; }
+.overlay-panel h2 { color: #00ff88; font-size: 28px; letter-spacing: 5px; margin-bottom: 28px; text-shadow: 0 0 15px #00ff88; }
 .setting-row {
     display: flex; align-items: center; justify-content: space-between;
-    width: 380px; padding: 12px 18px; margin: 6px 0;
-    background: rgba(0,255,136,0.06); border: 1px solid #00ff8844; border-radius: 8px;
-    color: #ccc; font-size: 16px;
+    width: 400px; padding: 13px 20px; margin: 5px 0;
+    background: rgba(0,255,136,0.05); border: 1px solid #00ff8830; border-radius: 8px;
+    color: #bbb; font-size: 15px;
 }
-.setting-row span { color: #00ff88; font-weight: bold; }
+.setting-row span { color: #00ff88; font-weight: bold; font-size: 14px; }
 .toggle-btn {
-    padding: 6px 18px; border-radius: 6px; border: 1px solid #00ff88;
-    background: rgba(0,255,136,0.12); color: #00ff88; cursor: pointer; font-size: 14px;
+    padding: 6px 16px; border-radius: 6px; border: 1px solid #00ff88;
+    background: rgba(0,255,136,0.10); color: #00ff88; cursor: pointer; font-size: 13px;
     transition: background 0.15s;
 }
-.toggle-btn:hover { background: rgba(0,255,136,0.3); }
-#settingsPanel .back-btn {
-    margin-top: 28px; padding: 12px 40px; border-radius: 8px; border: 1px solid #00ff88;
-    background: transparent; color: #00ff88; font-size: 16px; cursor: pointer; letter-spacing: 2px;
+.toggle-btn:hover { background: rgba(0,255,136,0.28); }
+.overlay-back {
+    margin-top: 24px; padding: 11px 36px; border-radius: 8px; border: 1px solid #00ff8866;
+    background: transparent; color: #00ff88; font-size: 15px; cursor: pointer; letter-spacing: 2px;
     transition: background 0.15s;
 }
-#settingsPanel .back-btn:hover { background: rgba(0,255,136,0.15); }
+.overlay-back:hover { background: rgba(0,255,136,0.15); }
+.menu-info-row { display: flex; gap: 32px; margin-bottom: 16px; }
+.menu-info-card {
+    background: rgba(0,255,136,0.06); border: 1px solid #00ff8830; border-radius: 10px;
+    padding: 18px 22px; text-align: center; color: #aaa; font-size: 13px;
+}
+.menu-info-card .ic { font-size: 32px; display: block; margin-bottom: 8px; }
+.menu-info-card b { color: #00ff88; display: block; font-size: 15px; margin-bottom: 4px; }
 #clickprompt {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
     color: #fff; font-size: 20px; font-weight: bold; text-shadow: 0 0 10px #00ff88;
-    background: rgba(0,0,0,0.8); padding: 24px 44px; border-radius: 14px;
+    background: rgba(0,0,0,0.85); padding: 24px 44px; border-radius: 14px;
     border: 2px solid #00ff88; text-align: center; z-index: 20; cursor: pointer;
     display: none;
 }
@@ -110,25 +140,35 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 <div id="crosshair" style="display:none">+</div>
 <div id="message"></div>
 <div id="dimension">&#x26A1; RICK &amp; MORTY DIMENSION &#x26A1;</div>
-<!-- Start Screen -->
+<!-- Ladebildschirm -->
 <div id="startscreen">
-    <div class="stars" id="starCanvas"></div>
-    <div class="ufo-icon">&#x1F6F8;</div>
-    <div class="logo">UFO FLY</div>
-    <div class="subtitle">&#11088; ENTDECKE DIE GALAXIE &#11088;</div>
-    <button class="menu-btn" id="btnPlay">&#9654; &nbsp;Spielen</button>
-    <button class="menu-btn" id="btnSettings">&#9881; &nbsp;Einstellungen</button>
+    <!-- Linke Seite: Logo + Sterne -->
+    <div class="bg-left">
+        <div class="stars" id="starCanvas"></div>
+        <div class="main-logo">
+            <span class="ufo-big">&#x1F6F8;</span>
+            <div class="game-title">UFO FLY</div>
+            <div class="game-sub">&#11088; ENTDECKE DIE GALAXIE &#11088;</div>
+        </div>
+    </div>
+    <!-- Rechte Seite: Buttons -->
+    <div class="panel-right">
+        <div class="panel-title">Hauptmenü</div>
+        <button class="menu-btn" id="btnSettings"><span class="btn-num">01</span>&#9881;&nbsp; Einstellungen</button>
+        <button class="menu-btn" id="btnMenuPanel"><span class="btn-num">02</span>&#9776;&nbsp; Menü</button>
+        <button class="menu-btn primary" id="btnPlay"><span class="btn-num">03</span>&#9654;&nbsp; Spielen</button>
+    </div>
 </div>
 
-<!-- Settings Panel -->
-<div id="settingsPanel">
+<!-- Einstellungen-Overlay -->
+<div class="overlay-panel" id="settingsPanel">
     <h2>&#9881; EINSTELLUNGEN</h2>
-    <div class="setting-row">Steuerung: WASD&nbsp;&nbsp;&nbsp;<span>Laufen</span></div>
-    <div class="setting-row">Leertaste&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>Springen</span></div>
-    <div class="setting-row">E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>UFO ein/aus</span></div>
-    <div class="setting-row">Mausrad&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>Zoom</span></div>
-    <div class="setting-row">Portal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>Rick &amp; Morty Dim.</span></div>
-    <div class="setting-row" style="margin-top:16px">
+    <div class="setting-row">WASD <span>Laufen</span></div>
+    <div class="setting-row">Leertaste <span>Springen</span></div>
+    <div class="setting-row">E <span>UFO ein / aussteigen</span></div>
+    <div class="setting-row">Mausrad <span>Kamera-Zoom</span></div>
+    <div class="setting-row">Portal (grün) <span>Rick &amp; Morty Dim.</span></div>
+    <div class="setting-row" style="margin-top:10px">
         Grafikqualität
         <button class="toggle-btn" id="btnQuality" onclick="cycleQuality()">Hoch</button>
     </div>
@@ -136,7 +176,20 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
         Nebel
         <button class="toggle-btn" id="btnFog" onclick="toggleFog()">An</button>
     </div>
-    <button class="back-btn" id="btnBack">&#8592; Zurück</button>
+    <button class="overlay-back" id="btnBackSettings">&#8592; Zurück</button>
+</div>
+
+<!-- Menü-Overlay -->
+<div class="overlay-panel" id="menuPanel">
+    <h2>&#9776; MENÜ</h2>
+    <div class="menu-info-row">
+        <div class="menu-info-card"><span class="ic">&#x1F6F8;</span><b>UFO</b>Drücke E zum Einsteigen</div>
+        <div class="menu-info-card"><span class="ic">&#x1F9DF;</span><b>Zombies</b>20 Kills = Upgrade</div>
+        <div class="menu-info-card"><span class="ic">&#x1F300;</span><b>Portal</b>Rick &amp; Morty Welt</div>
+    </div>
+    <div class="setting-row">Version <span>UFO Fly 1.0</span></div>
+    <div class="setting-row">Entwickler <span>Jerome</span></div>
+    <button class="overlay-back" id="btnBackMenu">&#8592; Zurück</button>
 </div>
 
 <div id="clickprompt">Klicke zum Fortfahren</div>
@@ -160,7 +213,6 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 
     document.getElementById('btnPlay').onclick = function() {
         document.getElementById('startscreen').style.display = 'none';
-        // Spiel wurde schon geladen, direkt clickprompt zeigen
         if (window._gameReady) {
             document.getElementById('clickprompt').style.display = 'block';
         } else {
@@ -170,8 +222,14 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
     document.getElementById('btnSettings').onclick = function() {
         document.getElementById('settingsPanel').style.display = 'flex';
     };
-    document.getElementById('btnBack').onclick = function() {
+    document.getElementById('btnMenuPanel').onclick = function() {
+        document.getElementById('menuPanel').style.display = 'flex';
+    };
+    document.getElementById('btnBackSettings').onclick = function() {
         document.getElementById('settingsPanel').style.display = 'none';
+    };
+    document.getElementById('btnBackMenu').onclick = function() {
+        document.getElementById('menuPanel').style.display = 'none';
     };
 })();
 
