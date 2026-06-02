@@ -921,6 +921,17 @@ function startGame() {
     let shootCooldown = 0;
     let mouseHeld = false;
 
+    function showCoinPopup() {
+        const el = document.createElement('div');
+        el.textContent = '+10 🪙';
+        el.style.cssText = 'position:fixed;left:50%;top:42%;transform:translateX(-50%);' +
+            'color:#ffdd00;font-size:22px;font-weight:bold;text-shadow:0 0 10px #ffaa00;' +
+            'z-index:20;pointer-events:none;transition:opacity 0.8s,top 0.8s;';
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; el.style.top = '32%'; }, 50);
+        setTimeout(() => document.body.removeChild(el), 900);
+    }
+
     function spawnBlood(pos) {
         for (let p = 0; p < 10; p++) {
             const part = new THREE.Mesh(
@@ -966,8 +977,9 @@ function startGame() {
                     obj.userData.alive = false;
                     spawnBlood(hits[0].point);
                     scene.remove(obj);
-                    zombiesKilled++;
-                    killUI.textContent = 'Zombies getoetet: ' + zombiesKilled;
+                    zombiesKilled++; coins += 10;
+                    killUI.textContent = '🧟 ' + zombiesKilled + '   🪙 ' + coins;
+                    showCoinPopup();
                     checkUFOUpgrade();
                     setTimeout(() => {
                         const rx = pPos.x + (Math.random()-.5)*160;
@@ -1273,7 +1285,7 @@ function startGame() {
 
     // ── Zombies ──────────────────────────────────────────────────────
     const zombies = [];
-    let zombiesKilled = 0;
+    let zombiesKilled = 0, coins = 0;
 
     function makeZombie(x, z) {
         const g = new THREE.Group();
@@ -1347,7 +1359,7 @@ function startGame() {
     // Zombie kill counter UI
     const killUI = document.createElement('div');
     killUI.style.cssText = 'position:fixed;bottom:20px;right:20px;color:#00ff88;font-size:16px;font-weight:bold;text-shadow:0 0 8px #00ff88;z-index:10;font-family:Arial;';
-    killUI.textContent = 'Zombies: 0 / ' + zombies.length;
+    killUI.textContent = '🧟 0   🪙 0';
     document.body.appendChild(killUI);
 
     // ── Portal ───────────────────────────────────────────────────────
@@ -1628,8 +1640,9 @@ function startGame() {
                 if (horizDist < upCur.beamRadius && vertDist > 0 && vertDist < upCur.beamHeight) {
                     ud.alive = false;
                     scene.remove(z);
-                    zombiesKilled++;
-                    killUI.textContent = 'Zombies getoetet: ' + zombiesKilled;
+                    zombiesKilled++; coins += 10;
+                    killUI.textContent = '🧟 ' + zombiesKilled + '   🪙 ' + coins;
+                    showCoinPopup();
                     checkUFOUpgrade();
                     // Blut-Partikel
                     for (let p = 0; p < 10; p++) {
