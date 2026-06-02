@@ -145,14 +145,127 @@ function startGame() {
     }
 
     // Haus-Meshes (geteilt)
+    // ── Betretbare Haeuser ───────────────────────────────────────────
+    const enterableHouses = []; // { doorPos, interiorOrigin, index }
+    let interiorIndex = 0;
+    let inHouse = false;
+    let currentHouseExit = null;
+    let houseCooldown = 0;
+
+    // Innenraum-Ursprünge: weit oben in Y damit sie von der Welt getrennt sind
+    function getInteriorOrigin(idx) {
+        return new THREE.Vector3(idx * 40, 300, 0);
+    }
+
+    function buildInterior(origin) {
+        const g = new THREE.Group();
+        const wallM = new THREE.MeshLambertMaterial({ color: 0xd4b896 });
+        const floorM = new THREE.MeshLambertMaterial({ color: 0x8B6914 });
+        const woodM  = new THREE.MeshLambertMaterial({ color: 0x5a3010 });
+
+        // Boden
+        g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(10,0.15,10), floorM), {position: new THREE.Vector3(0,0,0)}));
+        // Decke
+        const ceil = new THREE.Mesh(new THREE.BoxGeometry(10,0.15,10), wallM);
+        ceil.position.y = 3.5; g.add(ceil);
+        // Waende (links/rechts/hinten, vorne offen fuer Tuer)
+        const walls = [
+            {s:[0.15,3.5,10], p:[-5,1.75,0]},   // links
+            {s:[0.15,3.5,10], p:[ 5,1.75,0]},   // rechts
+            {s:[10,3.5,0.15], p:[0,1.75,-5]},   // hinten
+            {s:[3.5,3.5,0.15], p:[-3.25,1.75,5]}, // vorne links
+            {s:[3.5,3.5,0.15], p:[ 3.25,1.75,5]}, // vorne rechts
+            {s:[10,0.8,0.15],  p:[0,3.1,5]},      // vorne oben
+        ];
+        walls.forEach(({s,p}) => {
+            const w = new THREE.Mesh(new THREE.BoxGeometry(...s), wallM);
+            w.position.set(...p); g.add(w);
+        });
+
+        // Tisch
+        const tbl = new THREE.Group();
+        tbl.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2.5,0.12,1.4), woodM), {position: new THREE.Vector3(0,0.9,0)}));
+        [[0.9,0,-0.5],[0.9,0,0.5],[-0.9,0,-0.5],[-0.9,0,0.5]].forEach(([lx,ly,lz]) => {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.9,0.1), woodM);
+            leg.position.set(lx, 0.45+ly, lz); tbl.add(leg);
+        });
+        tbl.position.set(0, 0.08, -2); g.add(tbl);
+
+        // Stuehle
+        [[-1.6,0,-2],[1.6,0,-2],[0,0,-3.4]].forEach(([cx,cy,cz], i) => {
+            const ch = new THREE.Group();
+            ch.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.7,0.08,0.7), woodM), {position: new THREE.Vector3(0,0.55,0)}));
+            [[0.25,0.3,-0.25],[0.25,0.3,0.25],[-0.25,0.3,-0.25],[-0.25,0.3,0.25]].forEach(([lx,ly,lz]) => {
+                const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.55,0.07), woodM);
+                leg2.position.set(lx, ly, lz); ch.add(leg2);
+            });
+            const back = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.7,0.07), woodM);
+            back.position.set(0, 0.9, -0.35); ch.add(back);
+            ch.position.set(cx, cy, cz);
+            ch.rotation.y = i === 2 ? Math.PI : 0;
+            g.add(ch);
+        });
+
+        // Bett
+        const bed = new THREE.Group();
+        bed.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2,0.5,3.5), woodM), {position: new THREE.Vector3(0,0.25,0)}));
+        const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.8,0.3,3.2), new THREE.MeshLambertMaterial({color:0xffffff}));
+        mattress.position.y = 0.65; bed.add(mattress);
+        const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.15,0.6), new THREE.MeshLambertMaterial({color:0xddddff}));
+        pillow.position.set(0, 0.87, -1.2); bed.add(pillow);
+        bed.position.set(-3.2, 0.08, -1.5); g.add(bed);
+
+        // Regal
+        const shelf = new THREE.Group();
+        [1.5, 0.8, 0.1].forEach(sy => {
+            const s = new THREE.Mesh(new THREE.BoxGeometry(1.8,0.08,0.35), woodM);
+            s.position.y = sy; shelf.add(s);
+        });
+        // Buecher
+        const bookColors = [0xff4444,0x4444ff,0x44ff44,0xffaa00,0xff44ff];
+        for (let b = 0; b < 5; b++) {
+            const book = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.35,0.28),
+                new THREE.MeshLambertMaterial({color:bookColors[b]}));
+            book.position.set(-0.6+b*0.3, 1.03, 0); shelf.add(book);
+        }
+        shelf.position.set(3.8, 0, -4); g.add(shelf);
+
+        // Kamin
+        const fireplace = new THREE.Group();
+        fireplace.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2,2.5,0.5),
+            new THREE.MeshLambertMaterial({color:0x777777})), {position: new THREE.Vector3(0,1.25,0)}));
+        const fire = new THREE.Mesh(new THREE.SphereGeometry(0.3,8,8),
+            new THREE.MeshBasicMaterial({color:0xff6600}));
+        fire.position.set(0, 0.5, 0.1); fireplace.add(fire);
+        const fireLight = new THREE.PointLight(0xff6600, 2, 8);
+        fireLight.position.set(0, 0.8, 0.5); fireplace.add(fireLight);
+        fireplace.position.set(0, 0, -4.7); g.add(fireplace);
+        g.userData.fireLight = fireLight;
+        g.userData.fire = fire;
+
+        // Licht
+        const roomLight = new THREE.PointLight(0xffcc88, 1.5, 18);
+        roomLight.position.set(0, 3, 0); g.add(roomLight);
+        g.add(new THREE.AmbientLight(0x886644, 0.5));
+
+        g.position.copy(origin);
+        scene.add(g);
+        return g;
+    }
+
     function makeHouseGroup(rx, rz, ry) {
         const g = new THREE.Group();
         const wall = new THREE.Mesh(new THREE.BoxGeometry(7, 5, 7), new THREE.MeshLambertMaterial({ color: 0x9c7c4a }));
         wall.position.y = 2.5; wall.castShadow = true; g.add(wall);
         const roof = new THREE.Mesh(new THREE.ConeGeometry(6, 4, 4), new THREE.MeshLambertMaterial({ color: 0x5a2d00 }));
         roof.position.y = 7; roof.rotation.y = Math.PI / 4; g.add(roof);
-        const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.8, 0.15), new THREE.MeshLambertMaterial({ color: 0x3d1c02 }));
-        door.position.set(0, 1.4, 3.58); g.add(door);
+        // Tuer (offen lassen - kein Mesh, nur Rahmen)
+        const doorFrameM = new THREE.MeshLambertMaterial({ color: 0x3d1c02 });
+        const dfL = new THREE.Mesh(new THREE.BoxGeometry(0.2,3,0.2), doorFrameM);
+        dfL.position.set(-0.85,1.5,3.5); g.add(dfL);
+        const dfR = dfL.clone(); dfR.position.set(0.85,1.5,3.5); g.add(dfR);
+        const dfT = new THREE.Mesh(new THREE.BoxGeometry(1.9,0.2,0.2), doorFrameM);
+        dfT.position.set(0,3.1,3.5); g.add(dfT);
         [-2.2, 2.2].forEach(wx => {
             const win = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 0.15),
                 new THREE.MeshLambertMaterial({ color: 0xffe87c, emissive: 0xaa8800, emissiveIntensity: 0.5 }));
@@ -162,6 +275,24 @@ function startGame() {
         wl.position.set(0, 2.5, 4); g.add(wl);
         g.position.set(rx, getH(rx, rz), rz);
         g.rotation.y = ry;
+
+        // Innenraum erstellen
+        const idx = interiorIndex++;
+        const iOrigin = getInteriorOrigin(idx);
+        const interior = buildInterior(iOrigin);
+
+        // Tuerposition in Weltkoordinaten (vorne am Haus)
+        const doorWorld = new THREE.Vector3(0, 0, 4.5);
+        doorWorld.applyEuler(new THREE.Euler(0, ry, 0));
+        doorWorld.add(new THREE.Vector3(rx, getH(rx,rz), rz));
+
+        enterableHouses.push({
+            doorPos: doorWorld,
+            interiorOrigin: iOrigin,
+            interior,
+            worldPos: new THREE.Vector3(rx, getH(rx,rz)+1, rz)
+        });
+
         return g;
     }
 
@@ -907,6 +1038,57 @@ function startGame() {
             morty.position.y = 0.5 + Math.abs(Math.sin(time * 1.8)) * 0.18;
         }
 
+        // Haus-Cooldown
+        if (houseCooldown > 0) houseCooldown -= dt;
+
+        // Kamin-Animation
+        enterableHouses.forEach(h => {
+            if (h.interior && h.interior.userData.fire) {
+                h.interior.userData.fire.scale.setScalar(0.9 + Math.sin(time*8)*0.2);
+                h.interior.userData.fireLight.intensity = 1.5 + Math.sin(time*6)*0.8;
+            }
+        });
+
+        // Haus betreten/verlassen
+        if (!inUFO && !inRM && keys['KeyE'] && !keys['_ePrev'] && houseCooldown <= 0) {
+            if (!inHouse) {
+                // Naeher Eingang suchen
+                for (const h of enterableHouses) {
+                    if (pPos.distanceTo(h.doorPos) < 4) {
+                        inHouse = true;
+                        currentHouseExit = h.worldPos;
+                        houseCooldown = 2;
+                        // Spieler ins Innere teleportieren
+                        pPos.set(h.interiorOrigin.x, h.interiorOrigin.y + 1.2, h.interiorOrigin.z + 3);
+                        pVel.set(0,0,0);
+                        showMsg('Du bist im Haus! Druecke E zum Verlassen.', 4000);
+                        break;
+                    }
+                }
+            } else {
+                // Verlassen
+                inHouse = false;
+                houseCooldown = 2;
+                if (currentHouseExit) {
+                    pPos.set(currentHouseExit.x, currentHouseExit.y, currentHouseExit.z + 5);
+                    pVel.set(0,0,0);
+                }
+                showMsg('Du hast das Haus verlassen.', 2000);
+            }
+        }
+
+        // Hinweis wenn nah an Haustuer
+        if (!inUFO && !inRM && !inHouse && houseCooldown <= 0) {
+            let nearHouse = false;
+            for (const h of enterableHouses) {
+                if (pPos.distanceTo(h.doorPos) < 4) { nearHouse = true; break; }
+            }
+            if (nearHouse) {
+                document.getElementById('message').style.display = 'block';
+                document.getElementById('message').textContent = 'Druecke E um das Haus zu betreten!';
+            }
+        }
+
         // E-Taste: UFO einsteigen/aussteigen
         if (keys['KeyE'] && !keys['_ePrev']) {
             if (!inUFO && pPos.distanceTo(ufo.position) < 8) {
@@ -959,7 +1141,13 @@ function startGame() {
         // Ground (nur wenn nicht im UFO)
         if (!inUFO) {
             let gY;
-            if (inRM) {
+            if (inHouse) {
+                // Innenraum-Boden
+                const nearestHouse = enterableHouses.find(h =>
+                    Math.abs(pPos.x - h.interiorOrigin.x) < 8 && Math.abs(pPos.z - h.interiorOrigin.z) < 8
+                );
+                gY = nearestHouse ? nearestHouse.interiorOrigin.y + 0.08 : pPos.y - 1;
+            } else if (inRM) {
                 const lx = pPos.x - RM.x, lz = pPos.z - RM.z;
                 gY = RM.y + Math.sin(lx * 0.1) * 2 + Math.cos(lz * 0.08) * 1.5 + 0.8;
             } else {
