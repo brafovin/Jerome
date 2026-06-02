@@ -530,7 +530,7 @@ function startGame() {
             const ws = Math.sin(ud.walkPhase) * 0.4;
             ud.legL.rotation.x =  ws; ud.legR.rotation.x = -ws;
 
-            // Strahl-Check: UFO direkt über Zombie?
+            // Strahl-Check: UFO direkt über Zombie → sofort töten
             if (inUFO) {
                 const dx = ufo.position.x - z.position.x;
                 const dz = ufo.position.z - z.position.z;
@@ -538,36 +538,23 @@ function startGame() {
                 const vertDist  = ufo.position.y - z.position.y;
 
                 if (horizDist < 3.5 && vertDist > 0 && vertDist < 18) {
-                    // Zombie wird hochgezogen
-                    ud.beamPull += dt * 3;
-                    z.position.y += ud.beamPull * dt * 4;
-                    z.rotation.x += dt * 3;
-                    z.rotation.z += dt * 2;
-
-                    // Wenn nah genug am UFO → stirbt
-                    if (z.position.y >= ufo.position.y - 1) {
-                        ud.alive = false;
-                        scene.remove(z);
-                        zombiesKilled++;
-                        killUI.textContent = 'Zombies: ' + zombiesKilled + ' / ' + zombies.length;
-                        if (zombiesKilled === zombies.length) showMsg('Alle Zombies eliminiert! Du bist ein UFO-Held!', 6000);
-                        // Explosion-Partikel
-                        for (let p = 0; p < 8; p++) {
-                            const part = new THREE.Mesh(
-                                new THREE.SphereGeometry(0.1 + Math.random()*0.15, 5, 5),
-                                new THREE.MeshBasicMaterial({ color: p%2===0 ? 0xff2200 : 0x44ff00 })
-                            );
-                            part.position.copy(z.position);
-                            part.userData.vel = new THREE.Vector3((Math.random()-0.5)*6,(Math.random()+0.5)*5,(Math.random()-0.5)*6);
-                            part.userData.life = 1.0;
-                            scene.add(part);
-                            // Partikel-Timeout
-                            const partRef = part;
-                            setTimeout(() => scene.remove(partRef), 1000);
-                        }
+                    ud.alive = false;
+                    scene.remove(z);
+                    zombiesKilled++;
+                    killUI.textContent = 'Zombies: ' + zombiesKilled + ' / ' + zombies.length;
+                    if (zombiesKilled === zombies.length) showMsg('Alle Zombies eliminiert!', 5000);
+                    // Blut-Partikel auf dem Boden
+                    for (let p = 0; p < 10; p++) {
+                        const part = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.08 + Math.random()*0.12, 5, 5),
+                            new THREE.MeshBasicMaterial({ color: 0xaa0000 })
+                        );
+                        const killX = z.position.x + (Math.random()-0.5)*2;
+                        const killZ = z.position.z + (Math.random()-0.5)*2;
+                        part.position.set(killX, getH(killX, killZ) + 0.05, killZ);
+                        scene.add(part);
+                        setTimeout(() => scene.remove(part), 4000);
                     }
-                } else {
-                    ud.beamPull = Math.max(0, ud.beamPull - dt * 2);
                 }
             }
         });
