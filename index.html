@@ -22,11 +22,67 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
     padding: 12px 24px; border-radius: 10px; border: 1px solid #00ff88;
     display: none; max-width: 520px; pointer-events: none; z-index: 10;
 }
+#startscreen {
+    position: fixed; inset: 0; z-index: 50;
+    background: radial-gradient(ellipse at center, #0a1a2e 0%, #000 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0;
+}
+#startscreen .stars {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+#startscreen .logo {
+    font-size: 68px; font-weight: 900; letter-spacing: 8px;
+    color: #fff; text-shadow: 0 0 40px #00ff88, 0 0 80px #00aa55;
+    margin-bottom: 8px; position: relative;
+}
+#startscreen .subtitle {
+    color: #00ff88; font-size: 15px; letter-spacing: 4px;
+    text-shadow: 0 0 10px #00ff88; margin-bottom: 60px; position: relative;
+}
+#startscreen .ufo-icon { font-size: 80px; margin-bottom: 10px; animation: ufo-hover 2.5s ease-in-out infinite; position: relative; }
+@keyframes ufo-hover { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+.menu-btn {
+    width: 260px; padding: 16px 0; margin: 10px 0;
+    font-size: 20px; font-weight: bold; letter-spacing: 3px;
+    border-radius: 10px; border: 2px solid #00ff88;
+    background: rgba(0,255,136,0.08); color: #00ff88;
+    cursor: pointer; text-transform: uppercase; position: relative;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    text-shadow: 0 0 8px #00ff88;
+}
+.menu-btn:hover { background: rgba(0,255,136,0.22); box-shadow: 0 0 24px #00ff88; transform: scale(1.05); }
+.menu-btn:active { transform: scale(0.97); }
+#settingsPanel {
+    position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.92);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+}
+#settingsPanel h2 { color: #00ff88; font-size: 32px; letter-spacing: 4px; margin-bottom: 32px; text-shadow: 0 0 15px #00ff88; }
+.setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 380px; padding: 12px 18px; margin: 6px 0;
+    background: rgba(0,255,136,0.06); border: 1px solid #00ff8844; border-radius: 8px;
+    color: #ccc; font-size: 16px;
+}
+.setting-row span { color: #00ff88; font-weight: bold; }
+.toggle-btn {
+    padding: 6px 18px; border-radius: 6px; border: 1px solid #00ff88;
+    background: rgba(0,255,136,0.12); color: #00ff88; cursor: pointer; font-size: 14px;
+    transition: background 0.15s;
+}
+.toggle-btn:hover { background: rgba(0,255,136,0.3); }
+#settingsPanel .back-btn {
+    margin-top: 28px; padding: 12px 40px; border-radius: 8px; border: 1px solid #00ff88;
+    background: transparent; color: #00ff88; font-size: 16px; cursor: pointer; letter-spacing: 2px;
+    transition: background 0.15s;
+}
+#settingsPanel .back-btn:hover { background: rgba(0,255,136,0.15); }
 #clickprompt {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
     color: #fff; font-size: 20px; font-weight: bold; text-shadow: 0 0 10px #00ff88;
     background: rgba(0,0,0,0.8); padding: 24px 44px; border-radius: 14px;
     border: 2px solid #00ff88; text-align: center; z-index: 20; cursor: pointer;
+    display: none;
 }
 #dimension {
     position: fixed; top: 15px; right: 15px; z-index: 10;
@@ -54,11 +110,89 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 <div id="crosshair" style="display:none">+</div>
 <div id="message"></div>
 <div id="dimension">&#x26A1; RICK &amp; MORTY DIMENSION &#x26A1;</div>
-<div id="clickprompt">
-    &#x1F6F8; UFO FLY &#x1F6F8;<br><br>
-    <span style="font-size:15px">Klicke zum Spielen<br>Finde das Portal zu Rick &amp; Morty!</span>
+<!-- Start Screen -->
+<div id="startscreen">
+    <div class="stars" id="starCanvas"></div>
+    <div class="ufo-icon">&#x1F6F8;</div>
+    <div class="logo">UFO FLY</div>
+    <div class="subtitle">&#11088; ENTDECKE DIE GALAXIE &#11088;</div>
+    <button class="menu-btn" id="btnPlay">&#9654; &nbsp;Spielen</button>
+    <button class="menu-btn" id="btnSettings">&#9881; &nbsp;Einstellungen</button>
 </div>
 
+<!-- Settings Panel -->
+<div id="settingsPanel">
+    <h2>&#9881; EINSTELLUNGEN</h2>
+    <div class="setting-row">Steuerung: WASD&nbsp;&nbsp;&nbsp;<span>Laufen</span></div>
+    <div class="setting-row">Leertaste&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>Springen</span></div>
+    <div class="setting-row">E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>UFO ein/aus</span></div>
+    <div class="setting-row">Mausrad&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>Zoom</span></div>
+    <div class="setting-row">Portal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>Rick &amp; Morty Dim.</span></div>
+    <div class="setting-row" style="margin-top:16px">
+        Grafikqualität
+        <button class="toggle-btn" id="btnQuality" onclick="cycleQuality()">Hoch</button>
+    </div>
+    <div class="setting-row">
+        Nebel
+        <button class="toggle-btn" id="btnFog" onclick="toggleFog()">An</button>
+    </div>
+    <button class="back-btn" id="btnBack">&#8592; Zurück</button>
+</div>
+
+<div id="clickprompt">Klicke zum Fortfahren</div>
+
+<script>
+// ── Startmenü-Logik ──────────────────────────────────────────────────
+(function initMenu() {
+    // Sterne generieren
+    const sc = document.getElementById('starCanvas');
+    for (let i = 0; i < 140; i++) {
+        const s = document.createElement('div');
+        const size = Math.random() * 2.5 + 0.5;
+        s.style.cssText = `position:absolute;border-radius:50%;background:#fff;
+            width:${size}px;height:${size}px;
+            left:${Math.random()*100}%;top:${Math.random()*100}%;
+            opacity:${Math.random()*0.7+0.2};
+            animation:twinkle ${1.5+Math.random()*3}s ease-in-out infinite;
+            animation-delay:${Math.random()*3}s`;
+        sc.appendChild(s);
+    }
+
+    document.getElementById('btnPlay').onclick = function() {
+        document.getElementById('startscreen').style.display = 'none';
+        // Spiel wurde schon geladen, direkt clickprompt zeigen
+        if (window._gameReady) {
+            document.getElementById('clickprompt').style.display = 'block';
+        } else {
+            window._menuPlayPressed = true;
+        }
+    };
+    document.getElementById('btnSettings').onclick = function() {
+        document.getElementById('settingsPanel').style.display = 'flex';
+    };
+    document.getElementById('btnBack').onclick = function() {
+        document.getElementById('settingsPanel').style.display = 'none';
+    };
+})();
+
+let _fogEnabled = true, _qualityLevel = 2; // 0=Niedrig,1=Mittel,2=Hoch
+function toggleFog() {
+    _fogEnabled = !_fogEnabled;
+    document.getElementById('btnFog').textContent = _fogEnabled ? 'An' : 'Aus';
+    if (window._scene) window._scene.fog = _fogEnabled ? window._sceneFog : null;
+}
+function cycleQuality() {
+    const labels = ['Niedrig','Mittel','Hoch'];
+    _qualityLevel = (_qualityLevel + 1) % 3;
+    document.getElementById('btnQuality').textContent = labels[_qualityLevel];
+    if (window._renderer) {
+        window._renderer.setPixelRatio(_qualityLevel === 0 ? 0.75 : _qualityLevel === 1 ? 1 : Math.min(window.devicePixelRatio, 2));
+    }
+}
+</script>
+<style>
+@keyframes twinkle { 0%,100%{opacity:0.2} 50%{opacity:1} }
+</style>
 <script>
 // Load Three.js dynamically with fallback CDNs
 (function loadThree(urls, idx) {
@@ -79,13 +213,18 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 
 function startGame() {
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('ui').style.display = 'block';
-    document.getElementById('crosshair').style.display = 'block';
+    // UI wird erst nach "Spielen" angezeigt
+    window._gameReady = true;
+    if (window._menuPlayPressed) {
+        document.getElementById('clickprompt').style.display = 'block';
+    }
 
     // ── Scene ────────────────────────────────────────────────────────
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x060d1a);
-    scene.fog = new THREE.FogExp2(0x0a1520, 0.007);
+    const sceneFog = new THREE.FogExp2(0x0a1520, 0.007);
+    scene.fog = sceneFog;
+    window._scene = scene; window._sceneFog = sceneFog;
 
     const W = window.innerWidth, H = window.innerHeight;
     const camera = new THREE.PerspectiveCamera(70, W / H, 0.1, 800);
@@ -96,6 +235,7 @@ function startGame() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
+    window._renderer = renderer;
 
     // ── Lights ───────────────────────────────────────────────────────
     scene.add(new THREE.AmbientLight(0x2a3a55, 0.9));
@@ -1037,10 +1177,20 @@ function startGame() {
         camDist += e.deltaY * 0.02;
         camDist = Math.max(3, Math.min(40, camDist));
     });
-    renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
+    renderer.domElement.addEventListener('click', () => {
+        if (document.getElementById('startscreen').style.display === 'none')
+            renderer.domElement.requestPointerLock();
+    });
     document.addEventListener('pointerlockchange', () => {
         locked = document.pointerLockElement === renderer.domElement;
-        document.getElementById('clickprompt').style.display = locked ? 'none' : 'block';
+        if (locked) {
+            document.getElementById('clickprompt').style.display = 'none';
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+        } else {
+            if (document.getElementById('startscreen').style.display === 'none')
+                document.getElementById('clickprompt').style.display = 'block';
+        }
     });
     document.addEventListener('mousemove', e => {
         if (!locked) return;
