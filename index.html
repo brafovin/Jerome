@@ -414,20 +414,20 @@ function startGame() {
 
     // Tiere spawnen
     for (let i = 0; i < 20; i++) {
-        const a = Math.random()*Math.PI*2, r = 8+Math.random()*80;
-        makeDeer(Math.cos(a)*r, Math.sin(a)*r);
+        const x = (Math.random()-0.5)*600, z = (Math.random()-0.5)*600;
+        makeDeer(x, z);
     }
     for (let i = 0; i < 20; i++) {
-        const a = Math.random()*Math.PI*2, r = 5+Math.random()*70;
-        makeRabbit(Math.cos(a)*r, Math.sin(a)*r);
+        const x = (Math.random()-0.5)*600, z = (Math.random()-0.5)*600;
+        makeRabbit(x, z);
     }
     for (let i = 0; i < 20; i++) {
-        const a = Math.random()*Math.PI*2, r = 20+Math.random()*60;
-        makeBird(Math.cos(a)*r, 12+Math.random()*10, Math.sin(a)*r);
+        const x = (Math.random()-0.5)*600, z = (Math.random()-0.5)*600;
+        makeBird(x, 12+Math.random()*10, z);
     }
     for (let i = 0; i < 20; i++) {
-        const a = Math.random()*Math.PI*2, r = 5+Math.random()*50;
-        makeFirefly(Math.cos(a)*r, Math.sin(a)*r);
+        const x = (Math.random()-0.5)*600, z = (Math.random()-0.5)*600;
+        makeFirefly(x, z);
     }
 
     // ── UFO ─────────────────────────────────────────────────────────
