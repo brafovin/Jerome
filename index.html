@@ -230,7 +230,7 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 
     document.getElementById('btnPlay').onclick = function() {
         document.getElementById('startscreen').style.display = 'none';
-        const mobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+        const mobile = navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer: fine)').matches;
         if (mobile) {
             // Auf Mobile sofort starten
             document.getElementById('ui').style.display = 'block';
@@ -334,7 +334,7 @@ function startGame() {
     document.getElementById('loading').style.display = 'none';
     // UI wird erst nach "Spielen" angezeigt
     window._gameReady = true;
-    const _isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const _isMobile = navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer: fine)').matches;
     if (window._menuPlayPressed) {
         if (_isMobile) {
             document.getElementById('ui').style.display = 'block';
@@ -990,12 +990,11 @@ function startGame() {
     document.addEventListener('mouseup',   e => { if (e.button === 0) mouseHeld = false; });
 
     // ── Mobile Touch-Controls ────────────────────────────────────────
-    const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const isMobile = navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer: fine)').matches;
     if (isMobile) {
         document.getElementById('joystick-zone').style.display = 'block';
         document.getElementById('action-btns').style.display   = 'flex';
         document.getElementById('cam-zone').style.display      = 'block';
-        // Pointer Lock nicht nötig auf Mobile
         locked = true;
         document.getElementById('clickprompt').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
@@ -1087,10 +1086,12 @@ function startGame() {
     // Joystick → keys im Loop injizieren
     const _origLoop = window._mobileJoyInject;
     window._mobileJoyInject = function() {
-        keys['KeyW'] = jDy < -0.25;
-        keys['KeyS'] = jDy >  0.25;
-        keys['KeyA'] = jDx < -0.25;
-        keys['KeyD'] = jDx >  0.25;
+        if (jTouch !== null) {
+            keys['KeyW'] = jDy < -0.25;
+            keys['KeyS'] = jDy >  0.25;
+            keys['KeyA'] = jDx < -0.25;
+            keys['KeyD'] = jDx >  0.25;
+        }
     };
 
     player.position.set(2, 5, 2);
