@@ -44,9 +44,11 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 <div id="loading">Laden...</div>
 <div id="ui" style="display:none">
     <div id="title">&#x1F6F8; UFO FLY</div>
-    W A S D &#8212; Bewegen<br>
+    W A S D &#8212; Bewegen / UFO fliegen<br>
     Maus &#8212; Kamera drehen<br>
-    Leertaste &#8212; Springen<br><br>
+    Leertaste &#8212; Springen / UFO hoch<br>
+    Shift &#8212; UFO runter<br>
+    <b>E</b> &#8212; UFO einsteigen / aussteigen<br><br>
     Finde das gruene Portal!
 </div>
 <div id="crosshair" style="display:none">+</div>
@@ -406,6 +408,8 @@ function startGame() {
     const pVel = new THREE.Vector3();
     let onGround = false, inRM = false, portalCD = 0;
     let walkPhase = 0, time = 0, ufoT = 0;
+    let inUFO = false;
+    let ufoYaw = 0;
 
     function showMsg(txt, ms) {
         const el = document.getElementById('message');
@@ -424,11 +428,31 @@ function startGame() {
         time += dt;
 
         // UFO
-        ufoT += dt * 0.38;
-        ufo.position.x = Math.sin(ufoT) * 55 + Math.cos(ufoT * 0.5) * 18;
-        ufo.position.z = Math.cos(ufoT * 0.8) * 55 + Math.sin(ufoT * 1.2) * 14;
-        ufo.position.y = 22 + Math.sin(ufoT * 1.5) * 6;
-        ufo.rotation.y += dt * 1.3;
+        if (inUFO) {
+            // Spieler steuert das UFO
+            const ufFwd = new THREE.Vector3(-Math.sin(ufoYaw), 0, -Math.cos(ufoYaw));
+            const ufRgt = new THREE.Vector3( Math.cos(ufoYaw), 0, -Math.sin(ufoYaw));
+            const ufMv  = new THREE.Vector3();
+            if (keys['KeyW'] || keys['ArrowUp'])    ufMv.add(ufFwd);
+            if (keys['KeyS'] || keys['ArrowDown'])  ufMv.sub(ufFwd);
+            if (keys['KeyA'] || keys['ArrowLeft'])  ufMv.sub(ufRgt);
+            if (keys['KeyD'] || keys['ArrowRight']) ufMv.add(ufRgt);
+            if (ufMv.lengthSq() > 0) { ufMv.normalize(); ufo.position.addScaledVector(ufMv, 18 * dt); }
+            if (keys['Space'])      ufo.position.y += 12 * dt;
+            if (keys['ShiftLeft'] || keys['ShiftRight']) ufo.position.y -= 12 * dt;
+            ufo.position.y = Math.max(3, ufo.position.y);
+            ufoYaw -= (keys['KeyA']||keys['ArrowLeft'] ? -1 : keys['KeyD']||keys['ArrowRight'] ? 1 : 0) * dt * 0.8;
+            ufo.rotation.y += dt * 1.3;
+            // Spieler bleibt unsichtbar im UFO, Position folgt UFO
+            pPos.set(ufo.position.x, ufo.position.y - 3, ufo.position.z);
+        } else {
+            // UFO fliegt autonom wenn Spieler nicht drin
+            ufoT += dt * 0.38;
+            ufo.position.x = Math.sin(ufoT) * 55 + Math.cos(ufoT * 0.5) * 18;
+            ufo.position.z = Math.cos(ufoT * 0.8) * 55 + Math.sin(ufoT * 1.2) * 14;
+            ufo.position.y = 22 + Math.sin(ufoT * 1.5) * 6;
+            ufo.rotation.y += dt * 1.3;
+        }
         beamMesh.material.opacity = 0.06 + Math.abs(Math.sin(time * 4)) * 0.08;
 
         // Portals spin
@@ -451,40 +475,70 @@ function startGame() {
             morty.position.y = 0.5 + Math.abs(Math.sin(time * 1.8)) * 0.18;
         }
 
-        // Player move
+        // E-Taste: UFO einsteigen/aussteigen
+        if (keys['KeyE'] && !keys['_ePrev']) {
+            if (!inUFO && pPos.distanceTo(ufo.position) < 8) {
+                inUFO = true;
+                player.visible = false;
+                pVel.set(0,0,0);
+                ufoYaw = yaw;
+                showMsg('UFO Modus! WASD=Fliegen  Leertaste=Hoch  Shift=Runter  E=Aussteigen', 5000);
+            } else if (inUFO) {
+                inUFO = false;
+                player.visible = true;
+                pPos.set(ufo.position.x, ufo.position.y - 2, ufo.position.z);
+                pVel.set(0, -2, 0);
+                showMsg('Ausgestiegen! Drucke E um wieder einzusteigen.', 3000);
+            }
+        }
+        keys['_ePrev'] = keys['KeyE'];
+
+        // Player move (nur wenn nicht im UFO)
         const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
         const rgt = new THREE.Vector3( Math.cos(yaw), 0, -Math.sin(yaw));
         const mv  = new THREE.Vector3();
-        if (keys['KeyW'] || keys['ArrowUp'])    mv.add(fwd);
-        if (keys['KeyS'] || keys['ArrowDown'])  mv.sub(fwd);
-        if (keys['KeyA'] || keys['ArrowLeft'])  mv.sub(rgt);
-        if (keys['KeyD'] || keys['ArrowRight']) mv.add(rgt);
+        if (!inUFO) {
+            if (keys['KeyW'] || keys['ArrowUp'])    mv.add(fwd);
+            if (keys['KeyS'] || keys['ArrowDown'])  mv.sub(fwd);
+            if (keys['KeyA'] || keys['ArrowLeft'])  mv.sub(rgt);
+            if (keys['KeyD'] || keys['ArrowRight']) mv.add(rgt);
+        }
 
         const moving = mv.lengthSq() > 0;
         if (moving) { mv.normalize(); pVel.x += (mv.x * 6 - pVel.x) * 0.25; pVel.z += (mv.z * 6 - pVel.z) * 0.25; walkPhase += dt * 9; }
-        else        { pVel.x *= 0.78; pVel.z *= 0.78; }
+        else if (!inUFO) { pVel.x *= 0.78; pVel.z *= 0.78; }
 
-        if ((keys['Space'] || keys['KeyE']) && onGround) { pVel.y = 9; onGround = false; }
+        if (keys['Space'] && onGround && !inUFO) { pVel.y = 9; onGround = false; }
 
-        pVel.y -= 22 * dt;
-        pPos.addScaledVector(pVel, dt);
-        pPos.x = Math.max(-102, Math.min(102, pPos.x));
-        pPos.z = Math.max(-102, Math.min(102, pPos.z));
-
-        // Ground
-        let gY;
-        if (inRM) {
-            const lx = pPos.x - RM.x, lz = pPos.z - RM.z;
-            gY = RM.y + Math.sin(lx * 0.1) * 2 + Math.cos(lz * 0.08) * 1.5 + 0.8;
-        } else {
-            gY = getH(pPos.x, pPos.z);
+        if (!inUFO) {
+            pVel.y -= 22 * dt;
+            pPos.addScaledVector(pVel, dt);
+            pPos.x = Math.max(-102, Math.min(102, pPos.x));
+            pPos.z = Math.max(-102, Math.min(102, pPos.z));
         }
-        if (pPos.y < gY + 1.05) { pPos.y = gY + 1.05; pVel.y = 0; onGround = true; }
-        else onGround = false;
 
-        player.position.copy(pPos);
-        player.position.y -= 1.05;
-        player.rotation.y = yaw;
+        // Ground (nur wenn nicht im UFO)
+        if (!inUFO) {
+            let gY;
+            if (inRM) {
+                const lx = pPos.x - RM.x, lz = pPos.z - RM.z;
+                gY = RM.y + Math.sin(lx * 0.1) * 2 + Math.cos(lz * 0.08) * 1.5 + 0.8;
+            } else {
+                gY = getH(pPos.x, pPos.z);
+            }
+            if (pPos.y < gY + 1.05) { pPos.y = gY + 1.05; pVel.y = 0; onGround = true; }
+            else onGround = false;
+
+            player.position.copy(pPos);
+            player.position.y -= 1.05;
+            player.rotation.y = yaw;
+        }
+
+        // UFO Nähe-Hinweis
+        if (!inUFO && pPos.distanceTo(ufo.position) < 8) {
+            document.getElementById('message').style.display = 'block';
+            document.getElementById('message').textContent = 'Druecke E um das UFO zu betreten!';
+        }
 
         // Walk anim
         const sw = Math.sin(walkPhase) * (moving ? 0.45 : 0);
@@ -518,15 +572,27 @@ function startGame() {
             }
         }
 
-        // Camera (third-person)
-        const ct = pPos.clone().add(new THREE.Vector3(0, 0.8, 0));
-        const cd = 5.5;
-        camera.position.set(
-            ct.x + Math.sin(yaw) * cd * Math.cos(pitch),
-            ct.y + Math.sin(pitch) * cd + 1.2,
-            ct.z + Math.cos(yaw) * cd * Math.cos(pitch)
-        );
-        camera.lookAt(ct);
+        // Camera
+        if (inUFO) {
+            // Kamera folgt UFO von hinten/oben
+            const ufoCt = ufo.position.clone().add(new THREE.Vector3(0, 1, 0));
+            const cd2 = 12;
+            camera.position.set(
+                ufoCt.x + Math.sin(ufoYaw) * cd2 * Math.cos(pitch),
+                ufoCt.y + Math.sin(pitch) * cd2 + 3,
+                ufoCt.z + Math.cos(ufoYaw) * cd2 * Math.cos(pitch)
+            );
+            camera.lookAt(ufoCt);
+        } else {
+            const ct = pPos.clone().add(new THREE.Vector3(0, 0.8, 0));
+            const cd = 5.5;
+            camera.position.set(
+                ct.x + Math.sin(yaw) * cd * Math.cos(pitch),
+                ct.y + Math.sin(pitch) * cd + 1.2,
+                ct.z + Math.cos(yaw) * cd * Math.cos(pitch)
+            );
+            camera.lookAt(ct);
+        }
 
         renderer.render(scene, camera);
     }
