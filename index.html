@@ -194,6 +194,23 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 
 <div id="clickprompt">Klicke zum Fortfahren</div>
 
+<!-- Mobile Touch-Controls -->
+<div id="joystick-zone">
+    <div id="joystick-base"></div>
+    <div id="joystick-knob"></div>
+</div>
+<div id="cam-zone"></div>
+<div id="action-btns">
+    <div class="act-row">
+        <div class="act-btn red"    id="mBtn-shoot">🔥<br>Schuss</div>
+        <div class="act-btn green"  id="mBtn-jump">⬆️<br>Spring</div>
+    </div>
+    <div class="act-row">
+        <div class="act-btn blue"   id="mBtn-ufo">🛸<br>UFO</div>
+        <div class="act-btn yellow" id="mBtn-shift">⬇️<br>Runter</div>
+    </div>
+</div>
+
 <script>
 // ── Startmenü-Logik ──────────────────────────────────────────────────
 (function initMenu() {
@@ -213,10 +230,20 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
 
     document.getElementById('btnPlay').onclick = function() {
         document.getElementById('startscreen').style.display = 'none';
-        if (window._gameReady) {
-            document.getElementById('clickprompt').style.display = 'block';
+        const mobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+        if (mobile) {
+            // Auf Mobile sofort starten
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('clickprompt').style.display = 'none';
+            if (window._gameReady) { window._locked_mobile = true; }
+            else { window._menuPlayPressed = true; }
         } else {
-            window._menuPlayPressed = true;
+            if (window._gameReady) {
+                document.getElementById('clickprompt').style.display = 'block';
+            } else {
+                window._menuPlayPressed = true;
+            }
         }
     };
     document.getElementById('btnSettings').onclick = function() {
@@ -250,6 +277,40 @@ function cycleQuality() {
 </script>
 <style>
 @keyframes twinkle { 0%,100%{opacity:0.2} 50%{opacity:1} }
+#joystick-zone {
+    position:fixed;left:20px;bottom:20px;width:130px;height:130px;
+    z-index:15;touch-action:none;display:none;
+}
+#joystick-base {
+    position:absolute;inset:0;border-radius:50%;
+    background:rgba(255,255,255,0.10);border:2px solid rgba(255,255,255,0.25);
+}
+#joystick-knob {
+    position:absolute;width:52px;height:52px;border-radius:50%;
+    background:rgba(0,255,136,0.45);border:2px solid #00ff88;
+    top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+}
+#action-btns {
+    position:fixed;right:20px;bottom:24px;z-index:15;
+    display:none;flex-direction:column;gap:10px;align-items:flex-end;
+}
+.act-row { display:flex;gap:10px; }
+.act-btn {
+    width:62px;height:62px;border-radius:50%;
+    border:2px solid rgba(255,255,255,0.35);
+    background:rgba(0,0,0,0.45);color:#fff;
+    font-size:11px;font-weight:bold;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;touch-action:none;user-select:none;
+}
+.act-btn.red   { background:rgba(180,0,0,0.6);  border-color:#ff4444;color:#ffaaaa; }
+.act-btn.blue  { background:rgba(0,80,200,0.6); border-color:#4488ff;color:#aaccff; }
+.act-btn.green { background:rgba(0,140,60,0.6); border-color:#00ff88;color:#00ff88; }
+.act-btn.yellow{ background:rgba(150,110,0,0.6);border-color:#ffcc00;color:#ffee88; }
+#cam-zone {
+    position:fixed;right:0;top:0;width:55%;height:100%;
+    z-index:14;touch-action:none;display:none;
+}
 </style>
 <script>
 // Load Three.js dynamically with fallback CDNs
@@ -273,8 +334,14 @@ function startGame() {
     document.getElementById('loading').style.display = 'none';
     // UI wird erst nach "Spielen" angezeigt
     window._gameReady = true;
+    const _isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     if (window._menuPlayPressed) {
-        document.getElementById('clickprompt').style.display = 'block';
+        if (_isMobile) {
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+        } else {
+            document.getElementById('clickprompt').style.display = 'block';
+        }
     }
 
     // ── Scene ────────────────────────────────────────────────────────
@@ -922,6 +989,110 @@ function startGame() {
     document.addEventListener('mousedown', e => { if (e.button === 0) mouseHeld = true; });
     document.addEventListener('mouseup',   e => { if (e.button === 0) mouseHeld = false; });
 
+    // ── Mobile Touch-Controls ────────────────────────────────────────
+    const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    if (isMobile) {
+        document.getElementById('joystick-zone').style.display = 'block';
+        document.getElementById('action-btns').style.display   = 'flex';
+        document.getElementById('cam-zone').style.display      = 'block';
+        // Pointer Lock nicht nötig auf Mobile
+        locked = true;
+        document.getElementById('clickprompt').style.display = 'none';
+        document.getElementById('ui').style.display = 'block';
+        document.getElementById('crosshair').style.display = 'block';
+    }
+
+    // Joystick
+    const jZone = document.getElementById('joystick-zone');
+    const jKnob = document.getElementById('joystick-knob');
+    let jTouch = null, jBase = { x: 0, y: 0 };
+    const jRadius = 45;
+    let jDx = 0, jDy = 0;
+
+    jZone.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        const r = jZone.getBoundingClientRect();
+        jBase = { x: r.left + r.width/2, y: r.top + r.height/2 };
+        jTouch = t.identifier;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', e => {
+        for (const t of e.changedTouches) {
+            if (t.identifier === jTouch) {
+                const dx = t.clientX - jBase.x;
+                const dy = t.clientY - jBase.y;
+                const len = Math.sqrt(dx*dx + dy*dy);
+                const cx = len > jRadius ? dx/len*jRadius : dx;
+                const cy = len > jRadius ? dy/len*jRadius : dy;
+                jKnob.style.transform = `translate(calc(-50% + ${cx}px), calc(-50% + ${cy}px))`;
+                jDx = dx / jRadius; jDy = dy / jRadius;
+                if (Math.abs(jDx) > 1) jDx = jDx > 0 ? 1 : -1;
+                if (Math.abs(jDy) > 1) jDy = jDy > 0 ? 1 : -1;
+            }
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', e => {
+        for (const t of e.changedTouches) {
+            if (t.identifier === jTouch) {
+                jTouch = null; jDx = 0; jDy = 0;
+                jKnob.style.transform = 'translate(-50%,-50%)';
+            }
+        }
+    });
+
+    // Kamera-Swipe (rechte Bildschirmhälfte)
+    const camZone = document.getElementById('cam-zone');
+    let camTouch = null, camPrev = { x: 0, y: 0 };
+    camZone.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        camTouch = t.identifier;
+        camPrev = { x: t.clientX, y: t.clientY };
+    }, { passive: false });
+    camZone.addEventListener('touchmove', e => {
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+            if (t.identifier === camTouch) {
+                const dx = t.clientX - camPrev.x;
+                const dy = t.clientY - camPrev.y;
+                yaw   -= dx * 0.004;
+                pitch -= dy * 0.004;
+                pitch  = Math.max(-1.2, Math.min(1.2, pitch));
+                if (inUFO) ufoYaw = yaw;
+                camPrev = { x: t.clientX, y: t.clientY };
+            }
+        }
+    }, { passive: false });
+    camZone.addEventListener('touchend', e => {
+        for (const t of e.changedTouches) if (t.identifier === camTouch) camTouch = null;
+    });
+
+    // Action Buttons
+    function mobileBtn(id, keyCode, onPress, onRelease) {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', e => { e.preventDefault(); if (keyCode) keys[keyCode] = true; if (onPress) onPress(); }, { passive: false });
+        el.addEventListener('touchend',   e => { e.preventDefault(); if (keyCode) keys[keyCode] = false; if (onRelease) onRelease(); }, { passive: false });
+    }
+    mobileBtn('mBtn-jump',  'Space', null, null);
+    mobileBtn('mBtn-shift', 'ShiftLeft', null, null);
+    mobileBtn('mBtn-shoot', null, () => { mouseHeld = true; }, () => { mouseHeld = false; });
+    mobileBtn('mBtn-ufo',   null, () => {
+        // E-Taste simulieren (einmal)
+        keys['KeyE'] = true;
+        setTimeout(() => { keys['KeyE'] = false; }, 100);
+    }, null);
+
+    // Joystick → keys im Loop injizieren
+    const _origLoop = window._mobileJoyInject;
+    window._mobileJoyInject = function() {
+        keys['KeyW'] = jDy < -0.25;
+        keys['KeyS'] = jDy >  0.25;
+        keys['KeyA'] = jDx < -0.25;
+        keys['KeyD'] = jDx >  0.25;
+    };
+
     player.position.set(2, 5, 2);
     scene.add(player);
 
@@ -1409,6 +1580,8 @@ function startGame() {
         requestAnimationFrame(loop);
         const dt = Math.min(clock.getDelta(), 0.05);
         time += dt;
+
+        if (window._mobileJoyInject) window._mobileJoyInject();
 
         // ── Schuss-Update ───────────────────────────────────────────
         shootCooldown -= dt;
