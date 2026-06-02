@@ -328,7 +328,54 @@ function startGame() {
             group.add(makeTreeGroup(tx, tz));
         }
 
-        // Haeuser entfernt
+        // ── See (ca. 1 von 7 Chunks) ─────────────────────────────────
+        if (chunkRand(cx, cz, 77) < 0.14) {
+            const lx = ox + (chunkRand(cx, cz, 20) - 0.5) * CHUNK * 0.6;
+            const lz = oz + (chunkRand(cx, cz, 21) - 0.5) * CHUNK * 0.6;
+            const lakeY = getH(lx, lz) - 0.5; // leicht unter Terrain
+            const lakeW = 18 + chunkRand(cx, cz, 22) * 20;
+            const lakeD = 12 + chunkRand(cx, cz, 23) * 14;
+
+            // Wasser-Flaeche
+            const lakeGeo = new THREE.PlaneGeometry(lakeW, lakeD, 1, 1);
+            lakeGeo.rotateX(-Math.PI / 2);
+            const lakeMesh = new THREE.Mesh(lakeGeo,
+                new THREE.MeshLambertMaterial({
+                    color: 0x1a6eb5, transparent: true, opacity: 0.82
+                })
+            );
+            lakeMesh.position.set(lx, lakeY, lz);
+            group.add(lakeMesh);
+
+            // See-Rand (dunkler Streifen)
+            const rimGeo = new THREE.PlaneGeometry(lakeW + 1.5, lakeD + 1.5, 1, 1);
+            rimGeo.rotateX(-Math.PI / 2);
+            const rim = new THREE.Mesh(rimGeo,
+                new THREE.MeshLambertMaterial({ color: 0x0d3d6b, transparent: true, opacity: 0.6 })
+            );
+            rim.position.set(lx, lakeY - 0.02, lz);
+            group.add(rim);
+        }
+
+        // ── Fluss (ca. 1 von 10 Chunks) ──────────────────────────────
+        if (chunkRand(cx, cz, 88) < 0.1) {
+            const rx2 = ox + (chunkRand(cx, cz, 30) - 0.5) * CHUNK * 0.4;
+            const rz2 = oz + (chunkRand(cx, cz, 31) - 0.5) * CHUNK * 0.4;
+            const riverY = getH(rx2, rz2) - 0.4;
+            const horiz = chunkRand(cx, cz, 32) > 0.5;
+            const riverLen = CHUNK * 1.2;
+            const riverW = 5 + chunkRand(cx, cz, 33) * 4;
+
+            const riverGeo = new THREE.PlaneGeometry(horiz ? riverLen : riverW, horiz ? riverW : riverLen, 1, 1);
+            riverGeo.rotateX(-Math.PI / 2);
+            const riverMesh = new THREE.Mesh(riverGeo,
+                new THREE.MeshLambertMaterial({
+                    color: 0x2277cc, transparent: true, opacity: 0.78
+                })
+            );
+            riverMesh.position.set(rx2, riverY, rz2);
+            group.add(riverMesh);
+        }
 
         scene.add(group);
         chunks.set(key, group);
