@@ -1069,7 +1069,7 @@ function startGame() {
     }
 
     // ── State ────────────────────────────────────────────────────────
-    const pPos = new THREE.Vector3(2, 6, 2);
+    const pPos = new THREE.Vector3(2, getH(2, 2) + 3, 2);
     const pVel = new THREE.Vector3();
     let onGround = false, inRM = false, portalCD = 0;
     let walkPhase = 0, time = 0, ufoT = 0;
@@ -1305,11 +1305,11 @@ function startGame() {
                     getH(pPos.x, pPos.z - r)
                 );
             }
-            if (pPos.y < gY + 1.25) { pPos.y = gY + 1.25; pVel.y = 0; onGround = true; }
+            if (pPos.y < gY + 1.35) { pPos.y = gY + 1.35; pVel.y = 0; onGround = true; }
             else onGround = false;
 
             player.position.copy(pPos);
-            player.position.y -= 1.25;
+            player.position.y -= 1.35;
             player.rotation.y = yaw;
         }
 
@@ -1356,7 +1356,7 @@ function startGame() {
         // Camera — folgt Mausbewegung in beide Modi
         const camTarget = inUFO
             ? ufo.position.clone().add(new THREE.Vector3(0, 0.5, 0))
-            : pPos.clone().add(new THREE.Vector3(0, 0.8, 0));
+            : pPos.clone().add(new THREE.Vector3(0, 1.6, 0));
         const camX = camTarget.x + Math.sin(yaw) * camDist * Math.cos(pitch);
         const camY = camTarget.y - Math.sin(pitch) * camDist + 1.5;
         const camZ = camTarget.z + Math.cos(yaw) * camDist * Math.cos(pitch);
