@@ -1747,7 +1747,7 @@ function startGame() {
         if (keys['KeyE'] && !keys['_ePrev']) {
             if (!inUFO && pPos.distanceTo(ufo.position) < 8) {
                 inUFO = true;
-                player.visible = false;
+                player.visible = true;
                 pVel.set(0,0,0);
                 ufoYaw = yaw;
                 beamMesh.material.opacity = 0.1;
@@ -1814,6 +1814,16 @@ function startGame() {
             player.position.copy(pPos);
             player.position.y -= 1.35;
             player.rotation.y = yaw + Math.PI;
+        }
+
+        // Im UFO: Spieler sitzt im Cockpit
+        if (inUFO) {
+            player.position.set(
+                ufo.position.x,
+                ufo.position.y - 0.2,
+                ufo.position.z
+            );
+            player.rotation.y = ufoYaw + Math.PI;
         }
 
         // UFO Nähe-Hinweis
