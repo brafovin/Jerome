@@ -480,7 +480,9 @@ function startGame() {
         if (!locked) return;
         yaw   -= e.movementX * 0.0022;
         pitch -= e.movementY * 0.0022;
-        pitch  = Math.max(-0.58, Math.min(0.58, pitch));
+        pitch  = Math.max(-1.2, Math.min(1.2, pitch));
+        // UFO-Modus: Maus dreht auch das UFO
+        if (inUFO) ufoYaw = yaw;
     });
 
     // ── State ────────────────────────────────────────────────────────
@@ -703,27 +705,16 @@ function startGame() {
             }
         }
 
-        // Camera
-        if (inUFO) {
-            // Kamera folgt UFO von hinten/oben
-            const ufoCt = ufo.position.clone().add(new THREE.Vector3(0, 1, 0));
-            const cd2 = 12;
-            camera.position.set(
-                ufoCt.x + Math.sin(ufoYaw) * cd2 * Math.cos(pitch),
-                ufoCt.y + Math.sin(pitch) * cd2 + 3,
-                ufoCt.z + Math.cos(ufoYaw) * cd2 * Math.cos(pitch)
-            );
-            camera.lookAt(ufoCt);
-        } else {
-            const ct = pPos.clone().add(new THREE.Vector3(0, 0.8, 0));
-            const cd = 5.5;
-            camera.position.set(
-                ct.x + Math.sin(yaw) * cd * Math.cos(pitch),
-                ct.y + Math.sin(pitch) * cd + 1.2,
-                ct.z + Math.cos(yaw) * cd * Math.cos(pitch)
-            );
-            camera.lookAt(ct);
-        }
+        // Camera — folgt Mausbewegung in beide Modi
+        const camTarget = inUFO
+            ? ufo.position.clone().add(new THREE.Vector3(0, 0.5, 0))
+            : pPos.clone().add(new THREE.Vector3(0, 0.8, 0));
+        const camDist = inUFO ? 10 : 5.5;
+        const camX = camTarget.x + Math.sin(yaw) * camDist * Math.cos(pitch);
+        const camY = camTarget.y + Math.sin(pitch) * camDist + (inUFO ? 0 : 1.2);
+        const camZ = camTarget.z + Math.cos(yaw) * camDist * Math.cos(pitch);
+        camera.position.set(camX, camY, camZ);
+        camera.lookAt(camTarget);
 
         renderer.render(scene, camera);
     }
