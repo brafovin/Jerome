@@ -1246,7 +1246,7 @@ function startGame() {
     const ufo = new THREE.Group();
     ufo.add(new THREE.Mesh(new THREE.CylinderGeometry(3.5, 2.8, 0.65, 24), new THREE.MeshLambertMaterial({ color: 0x7799bb })));
     const dome = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 8, 0, Math.PI*2, 0, Math.PI/2),
-        new THREE.MeshLambertMaterial({ color: 0x44ccff, transparent: true, opacity: 0.75 }));
+        new THREE.MeshLambertMaterial({ color: 0x88ddff, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
     dome.position.y = 0.5; ufo.add(dome);
 
     const rimColors = [0x00ff88, 0xff4444, 0xffff00];
@@ -1820,7 +1820,7 @@ function startGame() {
         if (inUFO) {
             player.position.set(
                 ufo.position.x,
-                ufo.position.y - 0.2,
+                ufo.position.y + 0.3,
                 ufo.position.z
             );
             player.rotation.y = ufoYaw + Math.PI;
