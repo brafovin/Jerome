@@ -479,49 +479,140 @@ function startGame() {
     // Initial-Chunks laden
     updateChunks(0, 0);
 
-    // ── Player ───────────────────────────────────────────────────────
+    // ── Player (realistisch) ─────────────────────────────────────────
     const player = new THREE.Group();
-    const BLK  = new THREE.MeshLambertMaterial({ color: 0x111111 });
-    const SKIN = new THREE.MeshLambertMaterial({ color: 0xffcc99 });
 
-    const headM = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), SKIN);
-    headM.position.y = 1.62; headM.castShadow = true; player.add(headM);
+    const SKIN    = new THREE.MeshLambertMaterial({ color: 0xf0c89a });
+    const HOODIE  = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+    const PANTS   = new THREE.MeshLambertMaterial({ color: 0x111111 });
+    const SHOE_M  = new THREE.MeshLambertMaterial({ color: 0x0a0a0a });
+    const HAIR_M  = new THREE.MeshLambertMaterial({ color: 0x1a0f00 });
+    const WHITE   = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const EYE_M   = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const MOUTH_M = new THREE.MeshBasicMaterial({ color: 0x882222 });
+    const EYEW_M  = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-    const hairM = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.16, 0.44), new THREE.MeshLambertMaterial({ color: 0x222222 }));
-    hairM.position.y = 1.87; player.add(hairM);
+    // ── Kopf ─────────────────────────────────────────────────────────
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.50, 0.44), SKIN);
+    head.position.y = 1.72; head.castShadow = true; player.add(head);
 
-    const bodyM = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.82, 0.32), BLK);
-    bodyM.position.y = 0.95; bodyM.castShadow = true; player.add(bodyM);
+    // Haare (oben + seiten)
+    const hairTop = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.13, 0.46), HAIR_M);
+    hairTop.position.set(0, 2.00, 0); player.add(hairTop);
+    const hairFront = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.08, 0.06), HAIR_M);
+    hairFront.position.set(0, 1.94, 0.22); player.add(hairFront);
+    [-0.26, 0.26].forEach(hx => {
+        const hairSide = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.40), HAIR_M);
+        hairSide.position.set(hx, 1.84, 0); player.add(hairSide);
+    });
 
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.72, 0.24), BLK);
-    const legR = legL.clone();
-    legL.position.set(-0.17, 0.36, 0); legR.position.set(0.17, 0.36, 0);
-    player.add(legL, legR);
+    // Augen (Weiß + Pupille)
+    [-0.11, 0.11].forEach(ex => {
+        const eyeWhite = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 0.04), EYEW_M);
+        eyeWhite.position.set(ex, 1.73, 0.23); player.add(eyeWhite);
+        const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.055, 0.04), EYE_M);
+        pupil.position.set(ex, 1.73, 0.245); player.add(pupil);
+        // Augenbraue
+        const brow = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.025, 0.03), HAIR_M);
+        brow.position.set(ex, 1.785, 0.235); player.add(brow);
+    });
 
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.65, 0.2), BLK);
-    const armR = armL.clone();
-    armL.position.set(-0.44, 0.92, 0); armR.position.set(0.44, 0.92, 0);
-    player.add(armL, armR);
+    // Nase
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.065, 0.07), SKIN);
+    nose.position.set(0, 1.69, 0.245); player.add(nose);
 
-    const shoeMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
-    const shoeL = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.12, 0.34), shoeMat);
-    const shoeR = shoeL.clone();
-    shoeL.position.set(-0.17, 0.06, 0.04); shoeR.position.set(0.17, 0.06, 0.04);
-    player.add(shoeL, shoeR);
+    // Mund
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.03, 0.03), MOUTH_M);
+    mouth.position.set(0, 1.635, 0.235); player.add(mouth);
 
-    // Lantern
+    // ── Hals ─────────────────────────────────────────────────────────
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.11, 0.18, 8), SKIN);
+    neck.position.y = 1.46; player.add(neck);
+
+    // ── Körper (Hoodie) ───────────────────────────────────────────────
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.72, 0.36), HOODIE);
+    torso.position.y = 1.01; torso.castShadow = true; player.add(torso);
+
+    // Hoodie-Kapuze (hinten)
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.30, 0.20), HOODIE);
+    hood.position.set(0, 1.50, -0.18); player.add(hood);
+
+    // Hoodie-Tasche vorne
+    const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.14, 0.04), new THREE.MeshLambertMaterial({ color: 0x0d0d0d }));
+    pocket.position.set(0, 0.78, 0.20); player.add(pocket);
+
+    // Zip-Streifen
+    const zip = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.50, 0.04), new THREE.MeshLambertMaterial({ color: 0x444444 }));
+    zip.position.set(0, 1.05, 0.20); player.add(zip);
+
+    // ── Arme ─────────────────────────────────────────────────────────
+    // Oberam als Gruppe damit die Animation am Schultergelenk dreht
+    const armLG = new THREE.Group(); armLG.position.set(-0.42, 1.27, 0);
+    const armRG = new THREE.Group(); armRG.position.set( 0.42, 1.27, 0);
+
+    [armLG, armRG].forEach((ag, side) => {
+        const upper = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.38, 0.22), HOODIE);
+        upper.position.y = -0.19; ag.add(upper);
+        // Ellenbogen-Bereich
+        const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), HOODIE);
+        elbow.position.y = -0.40; ag.add(elbow);
+        // Unterarm
+        const lower = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.32, 0.19), HOODIE);
+        lower.position.y = -0.58; ag.add(lower);
+        // Hand
+        const hand = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.10), SKIN);
+        hand.position.y = -0.79; ag.add(hand);
+        player.add(ag);
+    });
+    const armL = armLG, armR = armRG;
+
+    // ── Beine ─────────────────────────────────────────────────────────
+    const legLG = new THREE.Group(); legLG.position.set(-0.18, 0.65, 0);
+    const legRG = new THREE.Group(); legRG.position.set( 0.18, 0.65, 0);
+
+    [legLG, legRG].forEach(lg => {
+        const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.38, 0.26), PANTS);
+        thigh.position.y = -0.19; lg.add(thigh);
+        const knee = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8), PANTS);
+        knee.position.y = -0.40; lg.add(knee);
+        const shin = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.35, 0.24), PANTS);
+        shin.position.y = -0.58; lg.add(shin);
+        player.add(lg);
+    });
+    const legL = legLG, legR = legRG;
+
+    // ── Schuhe ────────────────────────────────────────────────────────
+    [-0.18, 0.18].forEach(sx => {
+        const sole = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.36), SHOE_M);
+        sole.position.set(sx, 0.035, 0.04); player.add(sole);
+        const toeCap = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.10, 0.14), SHOE_M);
+        toeCap.position.set(sx, 0.09, 0.15); player.add(toeCap);
+        // Weisse Sohlen-Kante
+        const edge = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.04, 0.37), WHITE);
+        edge.position.set(sx, 0.00, 0.04); player.add(edge);
+    });
+
+    // ── Laterne ───────────────────────────────────────────────────────
     const lG = new THREE.Group();
-    lG.add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.25, 8), new THREE.MeshLambertMaterial({ color: 0xb8860b })));
-    const lGlass = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8),
-        new THREE.MeshLambertMaterial({ color: 0xffee88, emissive: 0xffaa00, emissiveIntensity: 1.2, transparent: true, opacity: 0.9 }));
-    lGlass.position.y = -0.22; lG.add(lGlass);
-    const lHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.18, 8), new THREE.MeshLambertMaterial({ color: 0xb8860b }));
-    lHandle.position.y = -0.22; lG.add(lHandle);
-    lG.position.set(0.62, 0.82, 0.1);
+    // Griff
+    const lGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.30, 8), new THREE.MeshLambertMaterial({ color: 0xb8860b }));
+    lG.add(lGrip);
+    // Laternenkörper
+    const lBody = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.10, 0.22, 6), new THREE.MeshLambertMaterial({ color: 0xb8860b }));
+    lBody.position.y = -0.26; lG.add(lBody);
+    // Glas
+    const lGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.16, 6),
+        new THREE.MeshLambertMaterial({ color: 0xffee88, emissive: 0xffaa00, emissiveIntensity: 1.0, transparent: true, opacity: 0.88 }));
+    lGlass.position.y = -0.26; lG.add(lGlass);
+    // Kette
+    const lChain = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 5), new THREE.MeshLambertMaterial({ color: 0x888800 }));
+    lChain.position.y = -0.09; lG.add(lChain);
+
+    lG.position.set(0.58, 0.78, 0.08);
     player.add(lG);
 
     const lanternLight = new THREE.PointLight(0xffaa33, 1.0, 8);
-    lanternLight.position.set(0.62, 0.7, 0.1);
+    lanternLight.position.set(0.58, 0.52, 0.08);
     player.add(lanternLight);
 
     player.position.set(2, 5, 2);
@@ -1222,9 +1313,11 @@ function startGame() {
         }
 
         // Walk anim
-        const sw = Math.sin(walkPhase) * (moving ? 0.45 : 0);
+        const sw = Math.sin(walkPhase) * (moving ? 0.55 : 0);
         legL.rotation.x =  sw; legR.rotation.x = -sw;
-        armL.rotation.x = -sw * 0.6; armR.rotation.x = sw * 0.6;
+        armL.rotation.x = -sw * 0.5; armR.rotation.x =  sw * 0.5;
+        // leichtes Körper-Wippen beim Gehen
+        player.position.y = (player.position.y - (player.position.y - (pPos.y - 1.05))) * 0.8 + (moving ? Math.abs(Math.sin(walkPhase * 2)) * 0.04 : 0);
 
         // Lantern flicker
         lanternLight.intensity = 2.2 + Math.sin(time * 11) * 0.3 + Math.sin(time * 7.3) * 0.2;
