@@ -192,6 +192,15 @@ canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: b
     <button class="overlay-back" id="btnBackMenu">&#8592; Zurück</button>
 </div>
 
+<!-- Shop UI -->
+<div id="shopUI">
+    <h2>🏪 SHOP</h2>
+    <div class="shop-coins" id="shopCoins">🪙 0 Münzen</div>
+    <div class="shop-grid" id="shopGrid"></div>
+    <button id="shopClose">✕ Schließen &nbsp;[F]</button>
+</div>
+<div id="shopHint">🏪 Drücke F um den Shop zu öffnen</div>
+
 <div id="clickprompt">Klicke zum Fortfahren</div>
 
 <!-- Mobile Touch-Controls -->
@@ -277,6 +286,50 @@ function cycleQuality() {
 </script>
 <style>
 @keyframes twinkle { 0%,100%{opacity:0.2} 50%{opacity:1} }
+#shopUI {
+    position:fixed;inset:0;z-index:40;background:rgba(0,0,0,0.82);
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+}
+#shopUI h2 {
+    color:#ffdd00;font-size:30px;letter-spacing:5px;margin-bottom:6px;
+    text-shadow:0 0 20px #ffaa00;
+}
+#shopUI .shop-coins {
+    color:#ffdd00;font-size:18px;margin-bottom:24px;
+    text-shadow:0 0 10px #ffaa00;
+}
+.shop-grid {
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:700px;
+}
+.shop-item {
+    background:rgba(255,210,0,0.07);border:2px solid #ffaa0055;border-radius:12px;
+    padding:18px 14px;text-align:center;cursor:pointer;
+    transition:background 0.2s,border-color 0.2s,transform 0.1s;
+    color:#ccc;
+}
+.shop-item:hover { background:rgba(255,200,0,0.18);border-color:#ffdd00;transform:scale(1.04); }
+.shop-item:active { transform:scale(0.97); }
+.shop-item .si-icon { font-size:36px;display:block;margin-bottom:8px; }
+.shop-item .si-name { font-size:15px;font-weight:bold;color:#fff;margin-bottom:4px; }
+.shop-item .si-desc { font-size:12px;color:#aaa;margin-bottom:10px;line-height:1.4; }
+.shop-item .si-price { font-size:16px;font-weight:bold;color:#ffdd00; }
+.shop-item.cant-afford { opacity:0.45;cursor:not-allowed; }
+.shop-item.cant-afford:hover { transform:none;background:rgba(255,200,0,0.05); }
+.shop-item.owned { border-color:#00ff88;background:rgba(0,255,136,0.08); }
+.shop-item.owned .si-price { color:#00ff88; }
+#shopClose {
+    margin-top:22px;padding:11px 40px;border-radius:8px;border:1px solid #ffaa00;
+    background:transparent;color:#ffdd00;font-size:15px;cursor:pointer;letter-spacing:2px;
+    transition:background 0.15s;
+}
+#shopClose:hover { background:rgba(255,180,0,0.15); }
+#shopHint {
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    color:#ffdd00;font-size:16px;font-weight:bold;text-align:center;
+    text-shadow:0 0 12px #ffaa00;background:rgba(0,0,0,0.7);
+    padding:10px 22px;border-radius:8px;border:1px solid #ffaa00;
+    display:none;pointer-events:none;z-index:11;
+}
 #joystick-zone {
     position:fixed;left:20px;bottom:20px;width:130px;height:130px;
     z-index:15;touch-action:none;display:none;
@@ -946,7 +999,7 @@ function startGame() {
 
     function shoot() {
         if (inUFO || !locked || shootCooldown > 0) return;
-        shootCooldown = 0.09; // ~11 Schuss/Sekunde
+        shootCooldown = 0.09 / fireRateMult;
 
         // Mündungsfeuer
         muzzleLight.intensity = 4;
@@ -962,7 +1015,7 @@ function startGame() {
         // Trefferpunkt bestimmen
         const liveZombies = zombies.filter(z => z.userData.alive);
         const hits = raycaster.intersectObjects(liveZombies, true);
-        const maxDist = 120;
+        const maxDist = window._bulletRange || 120;
         const endPt = hits.length > 0 && hits[0].distance < maxDist
             ? hits[0].point.clone()
             : ray.origin.clone().addScaledVector(ray.direction, maxDist);
@@ -1361,6 +1414,135 @@ function startGame() {
     killUI.style.cssText = 'position:fixed;bottom:20px;right:20px;color:#00ff88;font-size:16px;font-weight:bold;text-shadow:0 0 8px #00ff88;z-index:10;font-family:Arial;';
     killUI.textContent = '🧟 0   🪙 0';
     document.body.appendChild(killUI);
+
+    // ── Shop ─────────────────────────────────────────────────────────
+    const SHOP_X = -10, SHOP_Z = -10;
+    const shopH = getH(SHOP_X, SHOP_Z);
+    const shopGroup = new THREE.Group();
+
+    // Boden-Platte
+    const shopFloor = new THREE.Mesh(new THREE.BoxGeometry(7, 0.2, 7),
+        new THREE.MeshLambertMaterial({ color: 0x8B6914 }));
+    shopFloor.position.y = -0.1; shopGroup.add(shopFloor);
+    // Wände
+    [[0,0,3.4,6,3,0.3],[0,0,-3.4,6,3,0.3],[-3.4,0,0,0.3,3,7],[3.4,0,0,0.3,3,7]].forEach(([x,y,z,w,h,d]) => {
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshLambertMaterial({ color: 0xa0784a }));
+        wall.position.set(x, y+1.5, z); shopGroup.add(wall);
+    });
+    // Dach
+    const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.1,4.5,2.5,4),
+        new THREE.MeshLambertMaterial({ color: 0x7a1a1a }));
+    roof.position.y = 4.25; roof.rotation.y = Math.PI/4; shopGroup.add(roof);
+    // Tür (Öffnung – nur Rahmen)
+    const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.5,2.6,0.25),
+        new THREE.MeshLambertMaterial({ color: 0x5a3a10 }));
+    doorFrame.position.set(0, 1.3, 3.45); shopGroup.add(doorFrame);
+    const doorHole = new THREE.Mesh(new THREE.BoxGeometry(1.1,2.2,0.4),
+        new THREE.MeshLambertMaterial({ color: 0x8B6914 }));
+    doorHole.position.set(0, 1.1, 3.45); shopGroup.add(doorHole);
+    // Schild
+    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3,0.9,0.15),
+        new THREE.MeshLambertMaterial({ color: 0xf5c842 }));
+    signBoard.position.set(0, 3.3, 3.5); shopGroup.add(signBoard);
+    // Leuchte über Schild
+    const signLight = new THREE.PointLight(0xffcc44, 1.5, 8);
+    signLight.position.set(0, 4, 3.5); shopGroup.add(signLight);
+
+    shopGroup.position.set(SHOP_X, shopH, SHOP_Z);
+    scene.add(shopGroup);
+
+    // Shop-Inventar
+    let speedMult = 1, jumpMult = 1, fireRateMult = 1;
+    const SHOP_ITEMS = [
+        { id:'speed1',  icon:'👟', name:'Speed Boost I',   desc:'Laufgeschwindigkeit +50%', price:50,  max:1, owned:0 },
+        { id:'speed2',  icon:'⚡', name:'Speed Boost II',  desc:'Laufgeschwindigkeit +100%',price:120, max:1, owned:0, req:'speed1' },
+        { id:'jump1',   icon:'🦘', name:'Jump Boost',      desc:'Sprunghöhe verdoppeln',    price:40,  max:1, owned:0 },
+        { id:'firerate',icon:'🔫', name:'Schnellfeuer',    desc:'Feuerrate x2',             price:80,  max:1, owned:0 },
+        { id:'health',  icon:'❤️', name:'Leben auffüllen', desc:'Volle Gesundheit',         price:30,  max:99,owned:0 },
+        { id:'ammo',    icon:'🎯', name:'Präzisions-Lauf', desc:'Reichweite x2',            price:60,  max:1, owned:0 },
+        { id:'zombiewave',icon:'🧟',name:'Zombie-Welle',   desc:'5 neue Zombies spawnen',   price:25,  max:99,owned:0 },
+        { id:'ufo',     icon:'🛸', name:'UFO Upgrade',     desc:'UFO sofort upgraden',      price:200, max:4, owned:0 },
+        { id:'lantern', icon:'🏮', name:'Super-Laterne',   desc:'Riesiger Lichtradius',     price:35,  max:1, owned:0 },
+    ];
+
+    let shopOpen = false;
+
+    function buildShopGrid() {
+        const grid = document.getElementById('shopGrid');
+        grid.innerHTML = '';
+        document.getElementById('shopCoins').textContent = '🪙 ' + coins + ' Münzen';
+        SHOP_ITEMS.forEach(item => {
+            const canBuy = coins >= item.price && item.owned < item.max;
+            const maxed  = item.owned >= item.max && item.max === 1;
+            const reqOk  = !item.req || SHOP_ITEMS.find(i=>i.id===item.req)?.owned > 0;
+            const div = document.createElement('div');
+            div.className = 'shop-item' + (!canBuy || !reqOk ? ' cant-afford' : '') + (maxed ? ' owned' : '');
+            div.innerHTML = `<span class="si-icon">${item.icon}</span>
+                <div class="si-name">${item.name}</div>
+                <div class="si-desc">${item.desc}${item.req && !reqOk ? '<br><i style="color:#f88">Benötigt: '+SHOP_ITEMS.find(i=>i.id===item.req)?.name+'</i>' : ''}</div>
+                <div class="si-price">${maxed ? '✅ Gekauft' : '🪙 ' + item.price}</div>`;
+            if (canBuy && reqOk) div.onclick = () => buyItem(item);
+            grid.appendChild(div);
+        });
+    }
+
+    function buyItem(item) {
+        if (coins < item.price || item.owned >= item.max) return;
+        coins -= item.price;
+        item.owned++;
+        killUI.textContent = '🧟 ' + zombiesKilled + '   🪙 ' + coins;
+        // Effekt anwenden
+        if (item.id === 'speed1')    speedMult = 1.5;
+        if (item.id === 'speed2')    speedMult = 2.5;
+        if (item.id === 'jump1')     jumpMult = 2;
+        if (item.id === 'firerate')  fireRateMult = 2;
+        if (item.id === 'ammo')      window._bulletRange = 240;
+        if (item.id === 'lantern')   lanternLight.distance = 22;
+        if (item.id === 'health')    { /* health system später */ }
+        if (item.id === 'zombiewave') {
+            for (let i = 0; i < 5; i++) {
+                const rx = pPos.x + (Math.random()-.5)*120;
+                const rz = pPos.z + (Math.random()-.5)*120;
+                makeZombie(rx, rz);
+            }
+        }
+        if (item.id === 'ufo') {
+            ufoLevel = Math.min(ufoLevel + 1, UFO_UPGRADES.length);
+            checkUFOUpgrade();
+        }
+        buildShopGrid();
+    }
+
+    function openShop() {
+        shopOpen = true;
+        buildShopGrid();
+        document.getElementById('shopUI').style.display = 'flex';
+        if (document.pointerLockElement) document.exitPointerLock();
+    }
+    function closeShop() {
+        shopOpen = false;
+        document.getElementById('shopUI').style.display = 'none';
+    }
+
+    document.getElementById('shopClose').onclick = closeShop;
+    document.addEventListener('keydown', e => {
+        if (e.code === 'KeyF') {
+            if (shopOpen) closeShop();
+            else if (nearShop) openShop();
+        }
+        if (e.code === 'Escape' && shopOpen) closeShop();
+    });
+
+    // Mobile Shop-Button
+    const mShopBtn = document.createElement('div');
+    mShopBtn.id = 'mBtn-shop';
+    mShopBtn.className = 'act-btn';
+    mShopBtn.style.cssText += 'background:rgba(150,110,0,0.6);border-color:#ffcc00;color:#ffee88;';
+    mShopBtn.innerHTML = '🏪<br>Shop';
+    mShopBtn.addEventListener('touchstart', e => { e.preventDefault(); if (nearShop) openShop(); }, { passive: false });
+    document.getElementById('action-btns').querySelector('.act-row').appendChild(mShopBtn);
+
+    let nearShop = false;
 
     // ── Portal ───────────────────────────────────────────────────────
     const portalG = new THREE.Group();
@@ -1790,10 +1972,10 @@ function startGame() {
         }
 
         const moving = mv.lengthSq() > 0;
-        if (moving) { mv.normalize(); pVel.x += (mv.x * 12 - pVel.x) * 0.28; pVel.z += (mv.z * 12 - pVel.z) * 0.28; walkPhase += dt * 14; }
+        if (moving) { const spd = 12 * speedMult; mv.normalize(); pVel.x += (mv.x * spd - pVel.x) * 0.28; pVel.z += (mv.z * spd - pVel.z) * 0.28; walkPhase += dt * 14; }
         else if (!inUFO) { pVel.x *= 0.78; pVel.z *= 0.78; }
 
-        if (keys['Space'] && onGround && !inUFO) { pVel.y = 9; onGround = false; }
+        if (keys['Space'] && onGround && !inUFO) { pVel.y = 9 * jumpMult; onGround = false; }
 
         if (!inUFO) {
             pVel.y -= 22 * dt;
@@ -1838,6 +2020,11 @@ function startGame() {
             );
             player.rotation.y = ufoYaw + Math.PI;
         }
+
+        // Shop Nähe-Check
+        const shopWorldPos = new THREE.Vector3(SHOP_X, shopH, SHOP_Z);
+        nearShop = !inUFO && pPos.distanceTo(shopWorldPos) < 9;
+        document.getElementById('shopHint').style.display = nearShop && !shopOpen ? 'block' : 'none';
 
         // UFO Nähe-Hinweis
         if (!inUFO && pPos.distanceTo(ufo.position) < 8) {
