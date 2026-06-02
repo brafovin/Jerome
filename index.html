@@ -543,20 +543,31 @@ function startGame() {
                     ud.alive = false;
                     scene.remove(z);
                     zombiesKilled++;
-                    killUI.textContent = 'Zombies: ' + zombiesKilled + ' / ' + zombies.length;
-                    if (zombiesKilled === zombies.length) showMsg('Alle Zombies eliminiert!', 5000);
-                    // Blut-Partikel auf dem Boden
+                    killUI.textContent = 'Zombies getoetet: ' + zombiesKilled;
+                    // Blut-Partikel
                     for (let p = 0; p < 10; p++) {
                         const part = new THREE.Mesh(
                             new THREE.SphereGeometry(0.08 + Math.random()*0.12, 5, 5),
                             new THREE.MeshBasicMaterial({ color: 0xaa0000 })
                         );
-                        const killX = z.position.x + (Math.random()-0.5)*2;
-                        const killZ = z.position.z + (Math.random()-0.5)*2;
-                        part.position.set(killX, getH(killX, killZ) + 0.05, killZ);
+                        const kx = z.position.x + (Math.random()-0.5)*2;
+                        const kz2 = z.position.z + (Math.random()-0.5)*2;
+                        part.position.set(kx, getH(kx, kz2) + 0.05, kz2);
                         scene.add(part);
                         setTimeout(() => scene.remove(part), 4000);
                     }
+                    // Respawn nach 5 Sekunden an zufälliger Position
+                    setTimeout(() => {
+                        const rx = (Math.random()-0.5) * 180;
+                        const rz = (Math.random()-0.5) * 180;
+                        const rh = getH(rx, rz);
+                        z.position.set(rx, rh, rz);
+                        z.rotation.set(0, Math.random()*Math.PI*2, 0);
+                        z.userData.alive = true;
+                        z.userData.beamPull = 0;
+                        z.userData.walkDir.set(Math.random()-0.5, 0, Math.random()-0.5).normalize();
+                        scene.add(z);
+                    }, 5000);
                 }
             }
         });
