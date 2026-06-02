@@ -413,19 +413,19 @@ function startGame() {
     }
 
     // Tiere spawnen
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 5; i++) {
         const a = Math.random()*Math.PI*2, r = 8+Math.random()*80;
         makeDeer(Math.cos(a)*r, Math.sin(a)*r);
     }
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 7; i++) {
         const a = Math.random()*Math.PI*2, r = 5+Math.random()*70;
         makeRabbit(Math.cos(a)*r, Math.sin(a)*r);
     }
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 5; i++) {
         const a = Math.random()*Math.PI*2, r = 20+Math.random()*60;
         makeBird(Math.cos(a)*r, 12+Math.random()*10, Math.sin(a)*r);
     }
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 8; i++) {
         const a = Math.random()*Math.PI*2, r = 5+Math.random()*50;
         makeFirefly(Math.cos(a)*r, Math.sin(a)*r);
     }
