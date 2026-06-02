@@ -485,6 +485,54 @@ function startGame() {
         if (inUFO) ufoYaw = yaw;
     });
 
+    // ── UFO Upgrade System ────────────────────────────────────────────
+    let ufoLevel = 1;
+    const UFO_UPGRADES = [
+        { level: 1, speed: 18, beamRadius: 3.5,  beamHeight: 18, beamColor: 0x00ff88, rimScale: 1.0,  label: 'Standard UFO' },
+        { level: 2, speed: 24, beamRadius: 5.0,  beamHeight: 22, beamColor: 0x00ffff, rimScale: 1.3,  label: 'Upgrade 1: Breiter Strahl!' },
+        { level: 3, speed: 30, beamRadius: 7.0,  beamHeight: 28, beamColor: 0xffff00, rimScale: 1.6,  label: 'Upgrade 2: Mega-Strahl!' },
+        { level: 4, speed: 38, beamRadius: 9.5,  beamHeight: 35, beamColor: 0xff6600, rimScale: 2.0,  label: 'Upgrade 3: Feuer-Strahl!' },
+        { level: 5, speed: 50, beamRadius: 13.0, beamHeight: 45, beamColor: 0xff00ff, rimScale: 2.5,  label: 'MAXLEVEL: ULTRA UFO!' },
+    ];
+
+    // Upgrade-Anzeige UI
+    const upgradeUI = document.createElement('div');
+    upgradeUI.style.cssText = 'position:fixed;top:15px;right:15px;z-index:10;color:#00ffff;font-size:14px;font-weight:bold;text-shadow:0 0 8px #00ffff;font-family:Arial;text-align:right;';
+    upgradeUI.innerHTML = 'UFO Level 1<br><span style="color:#888;font-size:11px">Naechstes Upgrade: 20 kills</span>';
+    document.body.appendChild(upgradeUI);
+
+    function applyUFOUpgrade(lvl) {
+        const up = UFO_UPGRADES[Math.min(lvl - 1, UFO_UPGRADES.length - 1)];
+        // Strahl neu skalieren
+        beamMesh.scale.set(up.beamRadius / 2.5, 1, up.beamRadius / 2.5);
+        beamMesh.material.color.setHex(up.beamColor);
+        ufoLight.color.setHex(up.beamColor);
+        // UFO-Rim-Lichter vergroessern
+        ufo.scale.set(up.rimScale, up.rimScale, up.rimScale);
+        // Farbe der Rim-Lichter
+        rimLights.forEach((r, i) => r.material.color.setHex(i % 2 === 0 ? up.beamColor : 0xffffff));
+        // UI
+        const next = UFO_UPGRADES[Math.min(lvl, UFO_UPGRADES.length - 1)];
+        if (lvl >= UFO_UPGRADES.length) {
+            upgradeUI.innerHTML = '<span style="color:#ff00ff">UFO MAXLEVEL &#9733;</span>';
+        } else {
+            upgradeUI.innerHTML = 'UFO Level ' + lvl + '<br><span style="color:#888;font-size:11px">Naechstes: ' + (lvl * 20) + ' kills</span>';
+        }
+    }
+
+    function checkUFOUpgrade() {
+        const newLevel = Math.min(Math.floor(zombiesKilled / 20) + 1, UFO_UPGRADES.length);
+        if (newLevel > ufoLevel) {
+            ufoLevel = newLevel;
+            applyUFOUpgrade(ufoLevel);
+            const up = UFO_UPGRADES[ufoLevel - 1];
+            showMsg('🛸 UFO UPGRADE! ' + up.label + ' (Level ' + ufoLevel + ')', 5000);
+            // Flash-Effekt
+            ufoLight.intensity = 15;
+            setTimeout(() => ufoLight.intensity = 3, 500);
+        }
+    }
+
     // ── State ────────────────────────────────────────────────────────
     const pPos = new THREE.Vector3(2, 6, 2);
     const pVel = new THREE.Vector3();
@@ -538,12 +586,14 @@ function startGame() {
                 const dz = ufo.position.z - z.position.z;
                 const horizDist = Math.sqrt(dx*dx + dz*dz);
                 const vertDist  = ufo.position.y - z.position.y;
+                const upCur = UFO_UPGRADES[Math.min(ufoLevel - 1, UFO_UPGRADES.length - 1)];
 
-                if (horizDist < 3.5 && vertDist > 0 && vertDist < 18) {
+                if (horizDist < upCur.beamRadius && vertDist > 0 && vertDist < upCur.beamHeight) {
                     ud.alive = false;
                     scene.remove(z);
                     zombiesKilled++;
                     killUI.textContent = 'Zombies getoetet: ' + zombiesKilled;
+                    checkUFOUpgrade();
                     // Blut-Partikel
                     for (let p = 0; p < 10; p++) {
                         const part = new THREE.Mesh(
@@ -583,9 +633,10 @@ function startGame() {
             if (keys['KeyS'] || keys['ArrowDown'])  ufMv.sub(ufFwd);
             if (keys['KeyA'] || keys['ArrowLeft'])  ufMv.sub(ufRgt);
             if (keys['KeyD'] || keys['ArrowRight']) ufMv.add(ufRgt);
-            if (ufMv.lengthSq() > 0) { ufMv.normalize(); ufo.position.addScaledVector(ufMv, 18 * dt); }
-            if (keys['Space'])                               ufo.position.y += 14 * dt;
-            if (keys['ShiftLeft'] || keys['ShiftRight'])     ufo.position.y -= 14 * dt;
+            const curUp = UFO_UPGRADES[Math.min(ufoLevel - 1, UFO_UPGRADES.length - 1)];
+            if (ufMv.lengthSq() > 0) { ufMv.normalize(); ufo.position.addScaledVector(ufMv, curUp.speed * dt); }
+            if (keys['Space'])                               ufo.position.y += curUp.speed * 0.75 * dt;
+            if (keys['ShiftLeft'] || keys['ShiftRight'])     ufo.position.y -= curUp.speed * 0.75 * dt;
             // Nicht unter Boden sinken
             const minY = getH(ufo.position.x, ufo.position.z) + 1.5;
             if (ufo.position.y < minY) ufo.position.y = minY;
