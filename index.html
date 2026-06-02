@@ -275,7 +275,7 @@ function startGame() {
                 new THREE.MeshLambertMaterial({ color: 0xffe87c, emissive: 0xaa8800, emissiveIntensity: 0.5 }));
             win.position.set(wx, 2.8, 3.58); g.add(win);
         });
-        const wl = new THREE.PointLight(0xffcc44, 1, 14);
+        const wl = new THREE.PointLight(0xffcc44, 0.5, 8);
         wl.position.set(0, 2.5, 4); g.add(wl);
         g.position.set(rx, getH(rx, rz), rz);
         g.rotation.y = ry;
@@ -413,7 +413,7 @@ function startGame() {
     lG.position.set(0.62, 0.82, 0.1);
     player.add(lG);
 
-    const lanternLight = new THREE.PointLight(0xffaa33, 2.5, 18);
+    const lanternLight = new THREE.PointLight(0xffaa33, 1.0, 8);
     lanternLight.position.set(0.62, 0.7, 0.1);
     player.add(lanternLight);
 
@@ -534,7 +534,7 @@ function startGame() {
     // Schmetterling / Gluehwuermchen
     function makeFirefly(x, z) {
         const g = new THREE.Group();
-        const light = new THREE.PointLight(0x88ff44, 0.8, 8);
+        const light = new THREE.PointLight(0x88ff44, 0.3, 5);
         g.add(light);
         const glow = new THREE.Mesh(new THREE.SphereGeometry(0.06,6,6),
             new THREE.MeshBasicMaterial({ color: 0xaaffaa }));
@@ -587,7 +587,7 @@ function startGame() {
         new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.09, side: THREE.DoubleSide }));
     beamMesh.position.y = -5.3; ufo.add(beamMesh);
 
-    const ufoLight = new THREE.PointLight(0x00ff88, 3, 28);
+    const ufoLight = new THREE.PointLight(0x00ff88, 0.8, 12);
     ufoLight.position.y = -1; ufo.add(ufoLight);
     // UFO startet auf dem Boden
     const ufoStartX = 10, ufoStartZ = 10;
@@ -683,7 +683,7 @@ function startGame() {
     const portalGlow = new THREE.Mesh(new THREE.CircleGeometry(4.2, 32),
         new THREE.MeshBasicMaterial({ color: 0x00ff44, transparent: true, opacity: 0.12, side: THREE.DoubleSide }));
     portalG.add(portalGlow);
-    const pLight = new THREE.PointLight(0x00ff88, 3.5, 35);
+    const pLight = new THREE.PointLight(0x00ff88, 1.2, 15);
     portalG.add(pLight);
     portalG.position.set(-12, getH(-12, 18) + 3.5, 18);
     scene.add(portalG);
@@ -782,7 +782,7 @@ function startGame() {
     const rmRing = new THREE.Mesh(new THREE.TorusGeometry(3,0.35,16,64), new THREE.MeshBasicMaterial({color:0x00ff88}));
     rmExit.add(rmRing);
     rmExit.add(new THREE.Mesh(new THREE.CircleGeometry(3,64), new THREE.MeshBasicMaterial({color:0x00cc66,transparent:true,opacity:0.55,side:THREE.DoubleSide})));
-    const rmExitLight = new THREE.PointLight(0x00ff88,3,30);
+    const rmExitLight = new THREE.PointLight(0x00ff88,1,12);
     rmExit.add(rmExitLight);
     // Exit portal steht bei (0,3.5,0) lokal = weit weg vom Spawn (20,4,20)
     rmExit.position.set(0, 3.5, 0);
@@ -793,7 +793,7 @@ function startGame() {
     );
     rmExit.add(rmExitGlow);
     // Extra starkes Licht damit das Portal von weitem sichtbar ist
-    const rmExitBeacon = new THREE.PointLight(0x00ff88, 6, 60);
+    const rmExitBeacon = new THREE.PointLight(0x00ff88, 1.5, 20);
     rmExit.add(rmExitBeacon);
     rmGroup.add(rmExit);
 
