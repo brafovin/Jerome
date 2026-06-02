@@ -125,32 +125,32 @@ function startGame() {
     moonSphere.position.set(120, 150, -200);
     scene.add(moonSphere);
 
-    // ── Terrain ──────────────────────────────────────────────────────
+    // ── Terrain (unendlich, Chunk-System) ────────────────────────────
     function getH(x, z) {
         return Math.sin(x * 0.04) * 4
              + Math.cos(z * 0.06) * 3
              + Math.sin(x * 0.09 + z * 0.08) * 2
-             + Math.cos(x * 0.15 - z * 0.12) * 0.8;
+             + Math.cos(x * 0.15 - z * 0.12) * 0.8
+             + Math.sin(x * 0.012 + z * 0.008) * 8;  // grosse Huegel
     }
 
-    const tGeo = new THREE.PlaneGeometry(220, 220, 60, 60);
-    tGeo.rotateX(-Math.PI / 2);
-    const tv = tGeo.attributes.position.array;
-    for (let i = 0; i < tv.length; i += 3) tv[i + 1] = getH(tv[i], tv[i + 2]);
-    tGeo.computeVertexNormals();
-    const terrain = new THREE.Mesh(tGeo, new THREE.MeshLambertMaterial({ color: 0x2a5518 }));
-    terrain.receiveShadow = true;
-    scene.add(terrain);
+    const CHUNK = 60, CSEG = 20, CDIST = 4;
+    const terrMat = new THREE.MeshLambertMaterial({ color: 0x2a5518 });
+    const chunks = new Map();
 
-    // ── Houses ───────────────────────────────────────────────────────
-    function makeHouse(x, z, ry) {
+    // einfacher Hash fuer deterministischen Zufall pro Chunk
+    function chunkRand(cx, cz, n) {
+        const s = Math.sin(cx * 127.1 + cz * 311.7 + n * 74.3) * 43758.5453;
+        return s - Math.floor(s);
+    }
+
+    // Haus-Meshes (geteilt)
+    function makeHouseGroup(rx, rz, ry) {
         const g = new THREE.Group();
         const wall = new THREE.Mesh(new THREE.BoxGeometry(7, 5, 7), new THREE.MeshLambertMaterial({ color: 0x9c7c4a }));
-        wall.position.y = 2.5; wall.castShadow = true; wall.receiveShadow = true;
-        g.add(wall);
+        wall.position.y = 2.5; wall.castShadow = true; g.add(wall);
         const roof = new THREE.Mesh(new THREE.ConeGeometry(6, 4, 4), new THREE.MeshLambertMaterial({ color: 0x5a2d00 }));
-        roof.position.y = 7; roof.rotation.y = Math.PI / 4; roof.castShadow = true;
-        g.add(roof);
+        roof.position.y = 7; roof.rotation.y = Math.PI / 4; g.add(roof);
         const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.8, 0.15), new THREE.MeshLambertMaterial({ color: 0x3d1c02 }));
         door.position.set(0, 1.4, 3.58); g.add(door);
         [-2.2, 2.2].forEach(wx => {
@@ -160,30 +160,82 @@ function startGame() {
         });
         const wl = new THREE.PointLight(0xffcc44, 1, 14);
         wl.position.set(0, 2.5, 4); g.add(wl);
-        g.position.set(x, getH(x, z), z);
-        g.rotation.y = ry || 0;
-        scene.add(g);
+        g.position.set(rx, getH(rx, rz), rz);
+        g.rotation.y = ry;
+        return g;
     }
-    makeHouse(-22, -18, 0.3); makeHouse(18, -28, -0.5);
-    makeHouse(-35, 12, 1.2);  makeHouse(28, 22, -0.2);
-    makeHouse(8, -45, 0.8);   makeHouse(-15, 35, -1.0);
 
-    // ── Trees ────────────────────────────────────────────────────────
-    function makeTree(x, z) {
+    function makeTreeGroup(rx, rz) {
         const g = new THREE.Group();
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 2.5, 7),
             new THREE.MeshLambertMaterial({ color: 0x4a2800 }));
-        trunk.position.y = 1.25; trunk.castShadow = true; g.add(trunk);
-        [[3.5, 2.2, 0x1a5200],[5.2, 1.8, 0x245e00],[6.5, 1.2, 0x2d7000]].forEach(([ly, r, col]) => {
-            const leaf = new THREE.Mesh(new THREE.ConeGeometry(r, 2.5, 7), new THREE.MeshLambertMaterial({ color: col }));
-            leaf.position.y = ly; leaf.castShadow = true; g.add(leaf);
+        trunk.position.y = 1.25; g.add(trunk);
+        [[3.5,2.2,0x1a5200],[5.2,1.8,0x245e00],[6.5,1.2,0x2d7000]].forEach(([ly,r,col]) => {
+            const l = new THREE.Mesh(new THREE.ConeGeometry(r, 2.5, 7), new THREE.MeshLambertMaterial({ color: col }));
+            l.position.y = ly; g.add(l);
         });
-        g.position.set(x, getH(x, z), z); scene.add(g);
+        g.position.set(rx, getH(rx, rz), rz);
+        return g;
     }
-    for (let i = 0; i < 55; i++) {
-        const a = Math.random() * Math.PI * 2, r = 15 + Math.random() * 85;
-        makeTree(Math.cos(a) * r, Math.sin(a) * r);
+
+    function buildChunk(cx, cz) {
+        const key = cx + '_' + cz;
+        if (chunks.has(key)) return;
+        const ox = cx * CHUNK, oz = cz * CHUNK;
+        const group = new THREE.Group();
+
+        // Terrain-Mesh
+        const geo = new THREE.PlaneGeometry(CHUNK, CHUNK, CSEG, CSEG);
+        geo.rotateX(-Math.PI / 2);
+        const pos = geo.attributes.position.array;
+        for (let i = 0; i < pos.length; i += 3)
+            pos[i + 1] = getH(pos[i] + ox, pos[i + 2] + oz);
+        geo.computeVertexNormals();
+        const mesh = new THREE.Mesh(geo, terrMat);
+        mesh.position.set(ox, 0, oz);
+        mesh.receiveShadow = true;
+        group.add(mesh);
+
+        // Baeume (deterministisch per Chunk)
+        const treeCount = Math.floor(chunkRand(cx, cz, 0) * 8) + 3;
+        for (let t = 0; t < treeCount; t++) {
+            const tx = ox + (chunkRand(cx, cz, t*2+1) - 0.5) * CHUNK;
+            const tz = oz + (chunkRand(cx, cz, t*2+2) - 0.5) * CHUNK;
+            group.add(makeTreeGroup(tx, tz));
+        }
+
+        // Haus (ca. 1 von 6 Chunks bekommt ein Haus)
+        if (chunkRand(cx, cz, 99) < 0.18) {
+            const hx = ox + (chunkRand(cx, cz, 10) - 0.5) * CHUNK * 0.7;
+            const hz = oz + (chunkRand(cx, cz, 11) - 0.5) * CHUNK * 0.7;
+            const hr = chunkRand(cx, cz, 12) * Math.PI * 2;
+            group.add(makeHouseGroup(hx, hz, hr));
+        }
+
+        scene.add(group);
+        chunks.set(key, group);
     }
+
+    function updateChunks(px, pz) {
+        const cx = Math.floor(px / CHUNK);
+        const cz = Math.floor(pz / CHUNK);
+        // baue nahe Chunks
+        for (let dx = -CDIST; dx <= CDIST; dx++)
+            for (let dz = -CDIST; dz <= CDIST; dz++)
+                buildChunk(cx + dx, cz + dz);
+        // entferne weit entfernte Chunks
+        for (const [key, grp] of chunks) {
+            const [kcx, kcz] = key.split('_').map(Number);
+            if (Math.abs(kcx - cx) > CDIST + 1 || Math.abs(kcz - cz) > CDIST + 1) {
+                scene.remove(grp);
+                grp.traverse(c => { if (c.geometry) c.geometry.dispose(); });
+                chunks.delete(key);
+            }
+        }
+    }
+
+    // Initial-Chunks laden
+    updateChunks(0, 0);
 
     // ── Player ───────────────────────────────────────────────────────
     const player = new THREE.Group();
@@ -613,8 +665,8 @@ function startGame() {
                     }
                     // Respawn nach 5 Sekunden an zufälliger Position
                     setTimeout(() => {
-                        const rx = (Math.random()-0.5) * 180;
-                        const rz = (Math.random()-0.5) * 180;
+                        const rx = z.position.x + (Math.random()-0.5) * 200;
+                        const rz = z.position.z + (Math.random()-0.5) * 200;
                         const rh = getH(rx, rz);
                         z.position.set(rx, rh, rz);
                         z.rotation.set(0, Math.random()*Math.PI*2, 0);
@@ -713,9 +765,12 @@ function startGame() {
         if (!inUFO) {
             pVel.y -= 22 * dt;
             pPos.addScaledVector(pVel, dt);
-            pPos.x = Math.max(-102, Math.min(102, pPos.x));
-            pPos.z = Math.max(-102, Math.min(102, pPos.z));
+            // kein Clamp mehr — unendliche Welt
         }
+        // Chunks um aktuelle Position nachladen
+        const chunkPX = inUFO ? ufo.position.x : pPos.x;
+        const chunkPZ = inUFO ? ufo.position.z : pPos.z;
+        updateChunks(chunkPX, chunkPZ);
 
         // Ground (nur wenn nicht im UFO)
         if (!inUFO) {
