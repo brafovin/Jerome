@@ -710,10 +710,11 @@ function startGame() {
             ? ufo.position.clone().add(new THREE.Vector3(0, 0.5, 0))
             : pPos.clone().add(new THREE.Vector3(0, 0.8, 0));
         const camDist = inUFO ? 10 : 5.5;
+        // pitch positiv = Maus nach oben = Kamera geht runter = schaut nach oben ✓
         const camX = camTarget.x + Math.sin(yaw) * camDist * Math.cos(pitch);
-        const camY = camTarget.y + Math.sin(pitch) * camDist + (inUFO ? 0 : 1.2);
+        const camY = camTarget.y - Math.sin(pitch) * camDist + (inUFO ? 1 : 2);
         const camZ = camTarget.z + Math.cos(yaw) * camDist * Math.cos(pitch);
-        camera.position.set(camX, camY, camZ);
+        camera.position.set(camX, Math.max(camTarget.y - 4, camY), camZ);
         camera.lookAt(camTarget);
 
         renderer.render(scene, camera);
